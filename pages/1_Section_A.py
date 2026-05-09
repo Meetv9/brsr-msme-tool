@@ -137,12 +137,13 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from business_profile import (
-    init_business_profile, show_tier_badge,
+    init_business_profile, show_tier_badge, show_sidebar_logo,
     get_business_type, is_sole_prop, is_partnership,
     has_board, is_listed
 )
-
 init_business_profile()
+show_sidebar_logo()
+show_tier_badge()
 
 # Auto-sync business_type from Home with ownership field in Section A
 TIER_TO_OWNERSHIP = {
@@ -2101,5 +2102,8 @@ elif st.session_state.step == 5:
             st.rerun()
     with nav3:
         st.caption("Step 5 of 5 - Final Step")
+        
 
-
+# ─── BOTTOM NAVIGATION ──────────────────────────────────────────────────
+from business_profile import render_section_navigation
+render_section_navigation("Section A")

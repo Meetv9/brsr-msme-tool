@@ -13,7 +13,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from business_profile import (
-    init_business_profile, get_business_type, show_tier_badge, is_listed
+    init_business_profile, get_business_type, show_tier_badge, is_listed, show_sidebar_logo
 )
 
 st.set_page_config(
@@ -26,6 +26,8 @@ init_business_profile()
 
 st.title("📄 Generate Your BRSR Report")
 show_tier_badge()
+show_sidebar_logo()
+
 
 st.markdown("""
 This page compiles data from **all sections you filled** into one
@@ -144,14 +146,17 @@ if st.button(
     except Exception as e:
         st.error(f"❌ Error generating PDF: {str(e)}")
         st.exception(e)
-
 # ─────────────────────────────────────────────────────────────────────────────
 # NOTE
 # ─────────────────────────────────────────────────────────────────────────────
 st.markdown("---")
 st.caption(
-    "📌 **Note:** The current PDF generator covers Section A in detail. "
-    "Extending it to include all 9 principles in BRSR-audit format is the "
-    "next development step. Your data for all sections is stored and will "
-    "be included once the generator is expanded."
+    "📌 **Note:** This PDF report is generated based on the data you have "
+    "entered. For listed companies, please get this verified by a qualified "
+    "ESG consultant or auditor before official BRSR submission to SEBI."
 )
+
+
+# ─── BOTTOM NAVIGATION ──────────────────────────────────────────────────
+from business_profile import render_section_navigation
+render_section_navigation("Generate Report")

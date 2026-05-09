@@ -145,12 +145,13 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from business_profile import (
-    init_business_profile, show_tier_badge,
+    init_business_profile, show_tier_badge, show_sidebar_logo,
     get_business_type, has_board, requires_formal_policies
 )
 
 init_business_profile()
 show_tier_badge()
+show_sidebar_logo()
 # ─── END TIER LOGIC ────────────────────────────────────────────
 
 # Initialize principle data if not present
@@ -810,3 +811,7 @@ elif st.session_state.step_b == 5:
     with c_back:
         if st.button("← Back to Governance", use_container_width=True):
             go_b(4); st.rerun()
+ 
+# ─── BOTTOM NAVIGATION ──────────────────────────────────────────────────
+from business_profile import render_section_navigation
+render_section_navigation("Section B")          

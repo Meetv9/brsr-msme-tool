@@ -93,10 +93,12 @@ import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from business_profile import init_business_profile, show_tier_badge
+from business_profile import init_business_profile, show_tier_badge, show_sidebar_logo
 
 init_business_profile()
 show_tier_badge()
+show_sidebar_logo()
+
 # ─── END TIER LOGIC ────────────────────────────────────────────
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1284,3 +1286,7 @@ elif st.session_state.step_c_p2 == 6:
     with c_back2:
         if st.button("← Back to Leadership", use_container_width=True):
             go(5); st.rerun()
+           
+ # ─── BOTTOM NAVIGATION ──────────────────────────────────────────────────
+from business_profile import render_section_navigation
+render_section_navigation("Principle 2")

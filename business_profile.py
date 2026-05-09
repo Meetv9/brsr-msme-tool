@@ -119,7 +119,21 @@ def show_business_type_selector():
     )
     st.session_state.business_type = selected
     return selected
-
+def show_sidebar_logo():
+    """Render Ecosetu logo in sidebar. Call from every page."""
+    from pathlib import Path
+    base_dir = Path(__file__).parent
+    try:
+        st.logo(
+            str(base_dir / "assets" / "ecosetu_logo.png"),
+            icon_image=str(base_dir / "assets" / "ecosetu_icon_128.png"),
+            size="large"
+        )
+    except (AttributeError, TypeError):
+        with st.sidebar:
+            st.image(str(base_dir / "assets" / "ecosetu_logo.png"),
+                     use_container_width=True)
+            st.markdown("---")
 
 def show_tier_badge():
     """Small badge to show current tier on each page."""
@@ -154,3 +168,136 @@ def show_not_applicable_notice(what):
         f"📌 **{what}** is not applicable for {btype}. "
         "We'll mark this section as 'Not Applicable' in your BRSR report."
     )
+# ─────────────────────────────────────────────────────────────────────────────
+# CROSS-SECTION NAVIGATION
+# ─────────────────────────────────────────────────────────────────────────────
+PAGE_FLOW = [
+    ("Home",         "Home.py",                                  "🏠"),
+    ("Section A",    "pages/1_Section_A.py",                     "📋"),
+    ("Section B",    "pages/2_Section_B.py",                     "🧭"),
+    ("Principle 1",  "pages/3_Principle_1.py",                   "⚖️"),
+    ("Principle 2",  "pages/4_Principle_2.py",                   "🔄"),
+    ("Principle 3",  "pages/5_Principle_3.py",                   "👥"),
+    ("Principle 4+5","pages/6_Principle_4_5.py",                 "🤝"),
+    ("Principle 6",  "pages/7_Principle_6.py",                   "🌿"),
+    ("Principle 7+8+9","pages/8_Principle_7_8_9.py",             "🤝"),
+    ("Generate Report","pages/9_Generate_Report.py",             "📄"),
+]
+# ─────────────────────────────────────────────────────────────────────────────
+# MANDATORY FIELD VALIDATION
+# ─────────────────────────────────────────────────────────────────────────────
+def check_mandatory_fields(current_page_name):
+    """
+    Checks if prerequisite sections are filled. Shows a warning + redirect
+    button if not. Stops the page from rendering if validation fails.
+    """
+    requirements = {
+        "Section B":       ("data",   "company_name", "Section A"),
+        "Principle 1":     ("data_b", None,           "Section B"),
+        "Principle 2":     ("data_b", None,           "Section B"),
+        "Principle 3":     ("data_b", None,           "Section B"),
+        "Principle 4+5":   ("data_b", None,           "Section B"),
+        "Principle 6":     ("data_b", None,           "Section B"),
+        "Principle 7+8+9": ("data_b", None,           "Section B"),
+        "Generate Report": ("data",   "company_name", "Section A"),
+    }
+
+    if current_page_name not in requirements:
+        return True
+
+    key, subkey, prereq_name = requirements[current_page_name]
+    data = st.session_state.get(key, {})
+
+    if subkey:
+        ok = bool(data.get(subkey))
+    else:
+        ok = bool(data) and len(data) > 1
+
+    if not ok:
+        st.warning(
+            f"⚠️ **{prereq_name} not yet completed.** "
+            f"Please fill {prereq_name} first — it pre-fills important data "
+            f"used in this section."
+        )
+        col1, col2 = st.columns(2)
+        with col1:
+            path_map = {
+                "Section A": "pages/1_Section_A.py",
+                "Section B": "pages/2_Section_B.py",
+            }
+            if st.button(
+                f"← Go fill {prereq_name}",
+                type="primary",
+                use_container_width=True,
+                key=f"redirect_{current_page_name}"
+            ):
+                target = path_map.get(prereq_name)
+                if target:
+                    st.switch_page(target)
+        with col2:
+            st.markdown(
+                "<div style='text-align:center; color:#64748B; "
+                "padding-top:8px; font-size:13px;'>"
+                "💡 Use the sidebar to navigate to Home"
+                "</div>",
+                unsafe_allow_html=True
+            )
+        st.stop()
+
+    return True
+
+def render_section_navigation(current_page_name):
+    """
+    Renders Previous / Next buttons at the bottom of every page.
+    Home is reachable via the sidebar.
+    """
+    idx = next(
+        (i for i, (name, _, _) in enumerate(PAGE_FLOW) if name == current_page_name),
+        None
+    )
+    if idx is None:
+        return
+
+    st.markdown("---")
+    st.markdown("")
+
+    col_back, col_spacer, col_next = st.columns([2, 1, 2])
+
+    # ── Previous button ────────────────────────────────────────────────
+    with col_back:
+        if idx > 0 and current_page_name != "Section A":
+            prev_name, prev_path, prev_icon = PAGE_FLOW[idx - 1]
+            if prev_name == "Home":
+                # Skip showing "Back to Home" — use sidebar
+                pass
+            else:
+                if st.button(
+                    f"← Back to {prev_name}",
+                    key=f"nav_back_{current_page_name}",
+                    use_container_width=True
+                ):
+                    st.switch_page(prev_path)
+
+    # ── Spacer (empty middle column) ──────────────────────────────────
+    with col_spacer:
+        st.markdown(
+            "<div style='text-align:center; color:#94A3B8; "
+            "font-size:11px; padding-top:8px;'>"
+            "Use sidebar for Home"
+            "</div>",
+            unsafe_allow_html=True
+        )
+
+    # ── Next button ────────────────────────────────────────────────────
+    with col_next:
+        if idx < len(PAGE_FLOW) - 1:
+            next_name, next_path, next_icon = PAGE_FLOW[idx + 1]
+            if st.button(
+                f"{next_icon} Continue to {next_name} →",
+                type="primary",
+                key=f"nav_next_{current_page_name}",
+                use_container_width=True
+            ):
+                st.switch_page(next_path)
+
+    st.markdown("")

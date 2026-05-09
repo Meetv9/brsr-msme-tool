@@ -7,6 +7,10 @@ Streamlit auto-detects the /pages folder and builds the sidebar menu.
 """
 
 import streamlit as st
+from PIL import Image
+from pathlib import Path
+_BASE_DIR = Path(__file__).parent
+_ecosetu_icon = Image.open(_BASE_DIR / "assets" / "ecosetu_favicon.png")
 from business_profile import (
     show_business_type_selector,
     show_tier_badge,
@@ -19,10 +23,27 @@ from business_profile import (
 # PAGE CONFIG
 # ─────────────────────────────────────────────────────────────────────────────
 st.set_page_config(
-    page_title="BRSR Tool for MSMEs",
-    page_icon="🌱",
-    layout="centered"
+    page_title="Ecosetu — BRSR for Indian MSMEs",
+    page_icon="assets/ecosetu_favicon.png",
+    layout="centered",
+    initial_sidebar_state="expanded"
 )
+# ─────────────────────────────────────────────────────────────────────────────
+# SIDEBAR LOGO (shows on every page automatically)
+# ─────────────────────────────────────────────────────────────────────────────
+try:
+    st.logo(
+        str(_BASE_DIR / "assets" / "ecosetu_logo.png"),
+        icon_image=str(_BASE_DIR / "assets" / "ecosetu_icon_128.png"),
+        size="large"
+    )
+except (AttributeError, TypeError):
+    # Fallback for older Streamlit versions
+    with st.sidebar:
+        st.image(str(_BASE_DIR / "assets" / "ecosetu_logo.png"),
+                 use_container_width=True)
+        st.markdown("---")
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # CSS
@@ -58,19 +79,148 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ─────────────────────────────────────────────────────────────────────────────
-# HERO
+# HERO — Ecosetu Branding
 # ─────────────────────────────────────────────────────────────────────────────
-st.markdown("""
-<div class="hero-box">
-    <div style="font-size:48px">🌱</div>
-    <div style="font-size:28px;font-weight:700;color:#1b5e20;">
-        BRSR Tool for Indian MSMEs
+col_logo, col_text = st.columns([1, 2.5])
+
+with col_logo:
+    st.image(
+        str(_BASE_DIR / "assets" / "ecosetu_logo_large.png"),
+        use_container_width=True
+    )
+
+with col_text:
+    st.markdown("""
+<div style="padding-top:10px;">
+    <div style="font-size:11px; font-weight:600; color:#6366F1;
+                letter-spacing:2px; margin-bottom:6px;">
+        BRSR COMPLIANCE PLATFORM
     </div>
-    <div style="font-size:15px;color:#2e7d32;margin-top:8px;">
-        Business Responsibility & Sustainability Reporting — simplified for small businesses.
+    <div style="font-size:26px; font-weight:700; color:#0F172A;
+                line-height:1.2; margin-bottom:8px;">
+        Making Indian businesses<br>go green.
+    </div>
+    <div style="font-size:14px; color:#64748B; line-height:1.5;">
+        Bank-ready BRSR sustainability reports in 60 minutes —
+        purpose-built for Indian MSMEs.
     </div>
 </div>
 """, unsafe_allow_html=True)
+
+# Trust badges row
+st.markdown("")
+trust_col1, trust_col2, trust_col3, trust_col4 = st.columns(4)
+with trust_col1:
+    st.markdown(
+        '<div style="text-align:center; padding:12px 4px; background:#F8FAFC; '
+        'border-radius:8px; border:1px solid #E2E8F0;">'
+        '<div style="font-size:18px;">🆓</div>'
+        '<div style="font-size:11px; color:#64748B; margin-top:2px;">Free to use</div>'
+        '</div>',
+        unsafe_allow_html=True
+    )
+with trust_col2:
+    st.markdown(
+        '<div style="text-align:center; padding:12px 4px; background:#F8FAFC; '
+        'border-radius:8px; border:1px solid #E2E8F0;">'
+        '<div style="font-size:18px;">🔒</div>'
+        '<div style="font-size:11px; color:#64748B; margin-top:2px;">Privacy-first</div>'
+        '</div>',
+        unsafe_allow_html=True
+    )
+with trust_col3:
+    st.markdown(
+        '<div style="text-align:center; padding:12px 4px; background:#F8FAFC; '
+        'border-radius:8px; border:1px solid #E2E8F0;">'
+        '<div style="font-size:18px;">⚡</div>'
+        '<div style="font-size:11px; color:#64748B; margin-top:2px;">60-min report</div>'
+        '</div>',
+        unsafe_allow_html=True
+    )
+with trust_col4:
+    st.markdown(
+        '<div style="text-align:center; padding:12px 4px; background:#F8FAFC; '
+        'border-radius:8px; border:1px solid #E2E8F0;">'
+        '<div style="font-size:18px;">🇮🇳</div>'
+        '<div style="font-size:11px; color:#64748B; margin-top:2px;">Built for India</div>'
+        '</div>',
+        unsafe_allow_html=True
+    )
+# ─────────────────────────────────────────────────────────────────────────────
+# WHY BRSR? — Educational content for new visitors
+# ─────────────────────────────────────────────────────────────────────────────
+st.markdown("---")
+st.markdown("### 📖 What is BRSR & Why It Matters")
+
+with st.expander("**What is BRSR?**  (1 min read)", expanded=False):
+    st.markdown("""
+**BRSR** stands for **Business Responsibility & Sustainability Reporting**.
+
+It's a SEBI-mandated disclosure framework that asks Indian companies:
+
+> *"How do you treat your employees, customers, environment,
+> and community — beyond just making profits?"*
+
+The framework has **9 NGRBC principles** covering ethics, sustainability,
+employee welfare, stakeholder engagement, human rights, environment,
+policy advocacy, inclusive growth, and customer responsibility.
+
+**Currently mandatory for:** Top 1,000 listed companies (by market cap)
+**Voluntary for:** All other companies — but increasingly demanded by
+buyers, banks, and government schemes.
+""")
+
+with st.expander("**Why should an MSME care about BRSR?**", expanded=False):
+    st.markdown("""
+You're not legally required to file BRSR (unless you're a top-1000 listed
+company). But here's why MSMEs are doing it voluntarily:
+
+| Reason | What it unlocks |
+|--------|-----------------|
+| 🏦 **Bank loans** | Lower interest rates from SBI, HDFC, ICICI on ESG-disclosed loans |
+| 🌍 **Export contracts** | EU buyers demand sustainability disclosure (CSRD coming 2027) |
+| 🏭 **Big buyer contracts** | Tata, Reliance, ITC, Marico now ask suppliers for ESG data |
+| 🪙 **Government schemes** | PLI, RAMP, Aatmanirbhar Bharat schemes prioritize compliant MSMEs |
+| 💰 **Green funding** | SIDBI, NABARD offer concessional rates to ESG-disclosed MSMEs |
+| 📈 **Investor readiness** | If you ever raise funds, this is the first thing they'll ask |
+
+**One clean BRSR report = leverage in 6 different conversations.**
+""")
+
+with st.expander("**How does this tool help me?**", expanded=False):
+    st.markdown("""
+This tool is built **specifically for Indian MSMEs**, not big corporates.
+Here's what makes it different:
+
+- ⚡ **Quick Mode** — Answer just 10–15 questions per principle in plain language
+- 🌐 **Indian context** — Examples in Gujarat/Saurashtra/Indian regulatory terms
+- 💼 **Tier-aware** — If you're a sole proprietor, we hide board/KMP questions
+- 🧮 **Auto-calculations** — We compute scores, GHG emissions, water intensity for you
+- 📄 **BRSR-format PDF** — Audit-ready report you can send to banks/buyers
+- 🆓 **Free to use** — No signup, no payment, no data collection
+- 🔒 **Privacy-first** — Your data stays in your browser session, never sent to a server
+
+Built for MSMEs by an MSME-focused developer.
+""")
+
+with st.expander("**How long does this take?**", expanded=False):
+    st.markdown("""
+**Quick Mode:** ~45–60 minutes for the entire BRSR report (all 9 principles).
+
+**Full Mode:** ~3–4 hours if you want to fill every SEBI essential indicator.
+
+You can save and resume anytime — your progress is auto-saved in your
+browser session.
+
+**Tip:** Have these ready before you start:
+- Last year's turnover figure
+- Number of employees and workers
+- Electricity bills (annual kWh consumption)
+- PCB Consent to Operate certificate
+- A rough idea of your sourcing patterns
+""")
+
+st.markdown("")
 
 # ─────────────────────────────────────────────────────────────────────────────
 # STEP 1: BUSINESS TYPE SELECTOR
@@ -90,6 +240,23 @@ elif is_listed():
     st.warning(
         "⚠️ Listed companies must complete the full BRSR. "
         "All Essential + Leadership indicators will be shown."
+    )
+    # ─────────────────────────────────────────────────────────────────────────────
+# PRIMARY CTA — Start Section A
+# ─────────────────────────────────────────────────────────────────────────────
+st.markdown("")
+col_l, col_c, col_r = st.columns([1, 2, 1])
+with col_c:
+    if st.button(
+        "🚀  Start with Section A — General Disclosures",
+        type="primary",
+        use_container_width=True,
+        key="cta_start_section_a"
+    ):
+        st.switch_page("pages/1_Section_A.py")
+    st.caption(
+        "Takes about 10–15 minutes. Your progress is auto-saved.",
+        unsafe_allow_html=False
     )
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -234,10 +401,94 @@ else:
     )
 
 # ─────────────────────────────────────────────────────────────────────────────
-# FOOTER
+# FOOTER — Ecosetu branding + Your details
 # ─────────────────────────────────────────────────────────────────────────────
+st.markdown("<div style='height:48px'></div>", unsafe_allow_html=True)
 st.markdown("---")
-st.caption(
-    "Built for MSMEs based on SEBI BRSR format. "
-    "Not a substitute for professional legal or ESG advice."
-)
+
+# Top row: Brand statement
+st.markdown("""
+<div style="text-align:center; padding:16px 0 8px 0;">
+    <div style="font-size:14px; font-weight:600; color:#0F4C2C;
+                letter-spacing:0.3px; margin-bottom:4px;">
+        ECOSETU
+    </div>
+    <div style="font-size:12px; color:#64748B; font-style:italic;">
+        Green compliance, bridged.
+    </div>
+</div>
+""", unsafe_allow_html=True)
+
+# Three-column info grid
+col_a, col_b, col_c = st.columns(3)
+
+with col_a:
+    st.markdown("""
+<div style="padding:12px;">
+    <div style="font-size:10px; font-weight:600; color:#94A3B8;
+                letter-spacing:1.5px; margin-bottom:8px;">
+        BUILT BY
+    </div>
+    <div style="font-size:13px; font-weight:600; color:#0F172A;
+                margin-bottom:4px;">
+        Meet Ketankumar Vaghani
+    </div>
+    <div style="font-size:11px; color:#64748B; line-height:1.5;">
+        Certified ESG Professional<br/>
+        Bhavnagar, Gujarat
+    </div>
+</div>
+""", unsafe_allow_html=True)
+
+with col_b:
+    st.markdown("""
+<div style="padding:12px;">
+    <div style="font-size:10px; font-weight:600; color:#94A3B8;
+                letter-spacing:1.5px; margin-bottom:8px;">
+        AN INITIATIVE BY
+    </div>
+    <div style="font-size:13px; font-weight:600; color:#0F172A;
+                margin-bottom:4px;">
+        Keprin Overseas Corporation
+    </div>
+    <div style="font-size:11px; color:#64748B; line-height:1.5;">
+        Bhavnagar, India
+    </div>
+</div>
+""", unsafe_allow_html=True)
+
+with col_c:
+    st.markdown("""
+<div style="padding:12px;">
+    <div style="font-size:10px; font-weight:600; color:#94A3B8;
+                letter-spacing:1.5px; margin-bottom:8px;">
+        CONNECT
+    </div>
+    <a href="https://www.linkedin.com/in/meetvaghani/" target="_blank"
+       style="font-size:13px; font-weight:500; color:#0F4C2C;
+              text-decoration:none; display:block; margin-bottom:4px;">
+        LinkedIn →
+    </a>
+    <a href="mailto:meet.vaghani9909@gmail.com"
+       style="font-size:11px; color:#64748B; text-decoration:none;">
+        meet.vaghani9909@gmail.com
+    </a>
+</div>
+""", unsafe_allow_html=True)
+
+# Bottom disclaimer
+st.markdown("---")
+st.markdown("""
+<div style="text-align:center; padding:12px 0 24px 0;">
+    <div style="font-size:11px; color:#94A3B8; line-height:1.6;
+                max-width:560px; margin:0 auto;">
+        Built on the SEBI BRSR framework. Ecosetu is a self-service tool for
+        MSME ESG disclosure preparation and is not a substitute for qualified
+        legal, financial, or ESG advisory services. For final BRSR submission
+        to SEBI, listed entities should consult an authorised auditor.
+    </div>
+    <div style="font-size:10px; color:#CBD5E1; margin-top:12px;">
+        © 2026 Ecosetu · An initiative by Keprin Overseas Corporation
+    </div>
+</div>
+""", unsafe_allow_html=True)

@@ -126,12 +126,14 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from business_profile import (
-    init_business_profile, show_tier_badge,
+    init_business_profile, show_tier_badge, show_sidebar_logo,
     get_business_type, has_board
 )
 
 init_business_profile()
 show_tier_badge()
+show_sidebar_logo()
+
 # ─── END TIER LOGIC ────────────────────────────────────────────
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1089,3 +1091,7 @@ elif st.session_state.step_c_p1 == 5:
     with c_back:
         if st.button("← Back to Corrective Actions", use_container_width=True):
             go(4); st.rerun()
+            
+# ─── BOTTOM NAVIGATION ──────────────────────────────────────────────────
+from business_profile import render_section_navigation
+render_section_navigation("Principle 1")

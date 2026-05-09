@@ -2080,3 +2080,15 @@ else:
         with c_back2:
             if st.button("← Back", use_container_width=True):
                 prev_f(); st.rerun()
+                
+# ─── BOTTOM NAVIGATION ──────────────────────────────────────────────────
+from business_profile import render_section_navigation
+render_section_navigation("Principle 6")
+from business_profile import (
+    init_business_profile, show_tier_badge, show_sidebar_logo,
+    get_business_type, is_sole_prop, is_partnership,
+    has_board, is_listed
+)
+init_business_profile()
+show_sidebar_logo()
+show_tier_badge()

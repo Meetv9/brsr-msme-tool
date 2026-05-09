@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 80" width="280" height="80">
+  <!-- Icon mark -->
+  <g transform="translate(10, 12)">
+    <rect x="0" y="0" width="6" height="56" rx="3" fill="#0F4C2C"/>
+    <rect x="0" y="0" width="38" height="6" rx="3" fill="#0F4C2C"/>
+    <rect x="0" y="25" width="28" height="6" rx="3" fill="#16A34A"/>
+    <rect x="0" y="50" width="38" height="6" rx="3" fill="#0F4C2C"/>
+    <circle cx="46" cy="28" r="4" fill="#16A34A"/>
+    <path d="M 46 22 Q 42 26 46 32 Q 50 26 46 22 Z" fill="#16A34A"/>
+  </g>
+  <!-- Wordmark -->
+  <text x="76" y="48" font-family="Helvetica, Arial, sans-serif" font-size="26" font-weight="500" fill="#0F4C2C" letter-spacing="0.5">ECOSETU</text>
+  <!-- Tagline -->
+  <text x="76" y="64" font-family="Helvetica, Arial, sans-serif" font-size="9" font-weight="400" fill="#64748B" letter-spacing="1.5">GREEN COMPLIANCE, BRIDGED.</text>
+</svg>

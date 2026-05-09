@@ -4,9 +4,11 @@ import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from business_profile import init_business_profile, show_tier_badge
+from business_profile import init_business_profile, show_tier_badge, show_sidebar_logo
 
 init_business_profile()
+show_sidebar_logo()
+show_tier_badge()
 
 # ─── END TIER LOGIC ────────────────────────────────────────────
 import pandas as pd
@@ -1842,3 +1844,7 @@ else:
         with c_back2:
             if st.button("← Back", use_container_width=True):
                 prev_full(); st.rerun()
+                
+# ─── BOTTOM NAVIGATION ──────────────────────────────────────────────────
+from business_profile import render_section_navigation
+render_section_navigation("Principle 3")
