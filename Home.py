@@ -50,7 +50,7 @@ except (AttributeError, TypeError):
 # ─────────────────────────────────────────────────────────────────────────────
 st.markdown("""
 <style>
-    .block-container { padding-top: 1.5rem; max-width: 860px; }
+    .block-container { padding-top: 4rem; max-width: 860px; }
     .hero-box {
         background: linear-gradient(135deg, #e8f5e9, #f1f8e9);
         border: 2px solid #66bb6a; border-radius: 16px;
