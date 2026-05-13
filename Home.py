@@ -146,6 +146,26 @@ with trust_col4:
         '</div>',
         unsafe_allow_html=True
     )
+
+# ─────────────────────────────────────────────────────────────────────────
+# FOUNDING 100 CTA
+# ─────────────────────────────────────────────────────────────────────────
+st.markdown("")  # spacer
+cta_col1, cta_col2, cta_col3 = st.columns([1, 2, 1])
+with cta_col2:
+    st.link_button(
+        "🌱  Become a Founding Member — Free for Life",
+        "https://forms.gle/ZAvGwN25sCPT3gU3A",
+        use_container_width=True,
+        type="primary",
+    )
+    st.markdown(
+        "<p style='text-align:center; color:#555; font-size:14px; margin-top:8px;'>"
+        "First 100 companies only. No payment, no trial expiry, no catch."
+        "</p>",
+        unsafe_allow_html=True,
+    )
+st.markdown("")  # spacer    
 # ─────────────────────────────────────────────────────────────────────────────
 # WHY BRSR? — Educational content for new visitors
 # ─────────────────────────────────────────────────────────────────────────────
