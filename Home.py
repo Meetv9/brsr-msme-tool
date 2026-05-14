@@ -26,7 +26,12 @@ st.set_page_config(
     page_title="Ecosetu — BRSR for Indian MSMEs",
     page_icon="assets/ecosetu_favicon.png",
     layout="centered",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="expanded",
+    menu_items={
+        "Get Help": "mailto:meet.vaghani9909@gmail.com",
+        "Report a bug": "mailto:meet.vaghani9909@gmail.com?subject=Ecosetu%20Bug%20Report",
+        "About": "Ecosetu — BRSR compliance for Indian MSMEs. Built by Meet Vaghani. Visit ecosetu.co.in"
+    }
 )
 # ─────────────────────────────────────────────────────────────────────────────
 # SIDEBAR LOGO (shows on every page automatically)
@@ -50,7 +55,7 @@ except (AttributeError, TypeError):
 # ─────────────────────────────────────────────────────────────────────────────
 st.markdown("""
 <style>
-    .block-container { padding-top: 4rem; max-width: 860px; }
+    .block-container { padding-top: 4rem; max-width: 1000px; margin-left: auto; margin-right: auto; }
     .hero-box {
         background: linear-gradient(135deg, #e8f5e9, #f1f8e9);
         border: 2px solid #66bb6a; border-radius: 16px;
