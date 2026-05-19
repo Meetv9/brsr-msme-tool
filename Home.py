@@ -18,7 +18,7 @@ from business_profile import (
     is_sole_prop,
     is_listed,
 )
-
+from sidebar_footer import render_sidebar_footer
 # ─────────────────────────────────────────────────────────────────────────────
 # PAGE CONFIG
 # ─────────────────────────────────────────────────────────────────────────────
@@ -246,6 +246,39 @@ browser session.
 """)
 
 st.markdown("")
+# ─────────────────────────────────────────────────────────────────────
+# METHODOLOGY DOWNLOAD — for CAs, ESG consultants, advocates
+# ─────────────────────────────────────────────────────────────────────
+st.markdown("---")
+st.markdown("### 📘 For Reviewers, CAs & ESG Consultants")
+st.markdown(
+    "Want to understand how Ecosetu calculates every number — from electricity bills to "
+    "Scope 1 emissions to water withdrawal? Read our **Principle 6 Calculation Methodology**. "
+    "Every formula, every constant, every source — fully transparent."
+)
+
+try:
+    with open("assets/Ecosetu_P6_Methodology.pdf", "rb") as pdf_file:
+        pdf_bytes = pdf_file.read()
+
+    dl_col1, dl_col2, dl_col3 = st.columns([1, 2, 1])
+    with dl_col2:
+        st.download_button(
+            label="📥  Download Methodology Document (PDF)",
+            data=pdf_bytes,
+            file_name="Ecosetu_P6_Methodology.pdf",
+            mime="application/pdf",
+            use_container_width=True,
+        )
+        st.markdown(
+            "<p style='text-align:center; color:#666; font-size:13px; margin-top:6px;'>"
+            "9 pages · References IPCC, CEA, CPHEEO, SEBI BRSR guidelines"
+            "</p>",
+            unsafe_allow_html=True,
+        )
+except FileNotFoundError:
+    st.warning("Methodology document is being updated — please check back soon.")
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # STEP 1: BUSINESS TYPE SELECTOR
@@ -517,3 +550,5 @@ st.markdown("""
     </div>
 </div>
 """, unsafe_allow_html=True)
+
+render_sidebar_footer()

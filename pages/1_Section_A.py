@@ -2,6 +2,7 @@ import streamlit as st
 import re
 from pdf_generator import generate_brsr_pdf
 
+
 def _trigger_pdf_download(data: dict, esg_score: int):
     """Redirect users to the dedicated Generate Report page."""
     st.info(

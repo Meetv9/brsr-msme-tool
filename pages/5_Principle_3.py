@@ -1,4 +1,6 @@
 import streamlit as st
+from sidebar_footer import render_sidebar_footer
+render_sidebar_footer()
 # ─── TIER LOGIC (NEW) ──────────────────────────────────────────
 import sys
 from pathlib import Path

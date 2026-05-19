@@ -1,5 +1,7 @@
 import streamlit as st
 import pandas as pd
+from sidebar_footer import render_sidebar_footer
+render_sidebar_footer()
 
 # ─────────────────────────────────────────────────────────────────────────────
 # PAGE CONFIG

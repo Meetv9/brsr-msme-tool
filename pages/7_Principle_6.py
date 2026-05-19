@@ -1,5 +1,7 @@
 import streamlit as st
 import pandas as pd
+from sidebar_footer import render_sidebar_footer
+render_sidebar_footer()
 
 # ─────────────────────────────────────────────────────────────────────────────
 # PAGE CONFIG
@@ -298,7 +300,23 @@ with col_h2:
     if st.button("Switch Mode"):
         st.session_state.p6_mode = None
         st.rerun()
+# ─────────────────────────────────────────────────────────────────────
+# METHODOLOGY REFERENCE — compact in-context trust link
+# ─────────────────────────────────────────────────────────────────────
+try:
+    with open("assets/Ecosetu_P6_Methodology.pdf", "rb") as pdf_file:
+        st.download_button(
+            label="📘  How are these numbers calculated? Read the methodology",
+            data=pdf_file.read(),
+            file_name="Ecosetu_P6_Methodology.pdf",
+            mime="application/pdf",
+            key="p6_methodology_download",
+            use_container_width=False,
+        )
+except FileNotFoundError:
+    pass
 
+st.markdown("")
 # ═════════════════════════════════════════════════════════════════════════════
 # QUICK MODE
 # ═════════════════════════════════════════════════════════════════════════════

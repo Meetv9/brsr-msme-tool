@@ -22,4 +22,4 @@ Thumbs.db
 
 # Output / temp
 *.pdf
-test_output.pdf
+!assets/Ecosetu_P6_Methodology.pdf
