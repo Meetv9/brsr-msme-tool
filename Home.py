@@ -44,7 +44,7 @@ st.markdown(
                 line-height:1.5;'>
         💡 <b>Opened this from LinkedIn, Instagram, or WhatsApp?</b>
         For sign-up + PDF downloads to work properly, tap the 
-        <b>⋮ menu</b> in the top corner and choose 
+        <b> ••• menu</b> in the top corner and choose 
         <b>"Open in browser"</b> (or Safari/Chrome).
     </div>
     """,
