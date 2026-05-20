@@ -313,11 +313,22 @@ try:
             key="p6_methodology_download",
             use_container_width=False,
         )
+    st.markdown(
+        """
+        <p style='font-size:12px; color:#666; margin-top:4px;'>
+            On mobile / in-app browser? 
+            <a href='https://github.com/Meetv9/brsr-msme-tool/raw/main/assets/Ecosetu_P6_Methodology.pdf' 
+               target='_top' style='color:#0F4C2C; font-weight:600;'>
+               Open the PDF directly →
+            </a>
+        </p>
+        """,
+        unsafe_allow_html=True,
+    )
 except FileNotFoundError:
     pass
 
-st.markdown("")
-# ═════════════════════════════════════════════════════════════════════════════
+st.markdown("")# ═════════════════════════════════════════════════════════════════════════════
 # QUICK MODE
 # ═════════════════════════════════════════════════════════════════════════════
 if st.session_state.p6_mode == "quick":

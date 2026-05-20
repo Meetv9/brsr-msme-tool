@@ -33,6 +33,23 @@ st.set_page_config(
         "About": "Ecosetu — BRSR compliance for Indian MSMEs. Built by Meet Vaghani. Visit ecosetu.co.in"
     }
 )
+# ─────────────────────────────────────────────────────────────────────
+# IN-APP BROWSER NOTICE — for LinkedIn / Instagram / WhatsApp visitors
+# ─────────────────────────────────────────────────────────────────────
+st.markdown(
+    """
+    <div style='background:#fff8e1; border:1px solid #ffcc80;
+                border-radius:8px; padding:10px 14px;
+                font-size:13px; color:#5d4037; margin: 8px 0 16px 0;
+                line-height:1.5;'>
+        💡 <b>Opened this from LinkedIn, Instagram, or WhatsApp?</b>
+        For sign-up + PDF downloads to work properly, tap the 
+        <b>⋮ menu</b> in the top corner and choose 
+        <b>"Open in browser"</b> (or Safari/Chrome).
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
 # ─────────────────────────────────────────────────────────────────────────────
 # SIDEBAR LOGO (shows on every page automatically)
 # ─────────────────────────────────────────────────────────────────────────────
@@ -156,21 +173,26 @@ with trust_col4:
 # FOUNDING 100 CTA
 # ─────────────────────────────────────────────────────────────────────────
 st.markdown("")  # spacer
-cta_col1, cta_col2, cta_col3 = st.columns([1, 2, 1])
-with cta_col2:
-    st.link_button(
-        "🌱  Become a Founding Member — Free for Life",
-        "https://forms.gle/ZAvGwN25sCPT3gU3A",
-        use_container_width=True,
-        type="primary",
-    )
-    st.markdown(
-        "<p style='text-align:center; color:#555; font-size:14px; margin-top:8px;'>"
-        "First 100 companies only. No payment, no trial expiry, no catch."
-        "</p>",
-        unsafe_allow_html=True,
-    )
-st.markdown("")  # spacer    
+st.markdown(
+    """
+    <div style='display:flex; justify-content:center; margin: 12px 0;'>
+        <a href='https://forms.gle/ZAvGwN25sCPT3gU3A' 
+           target='_top'
+           style='display:inline-block; padding:14px 28px;
+                  background:#6366F1; color:white;
+                  border-radius:10px; text-decoration:none;
+                  font-size:16px; font-weight:600;
+                  box-shadow: 0 2px 8px rgba(99,102,241,0.3);'>
+            🌱 Become a Founding Member — Free for Life
+        </a>
+    </div>
+    <p style='text-align:center; color:#555; font-size:14px; margin-top:8px;'>
+        First 100 companies only. No payment, no trial expiry, no catch.
+    </p>
+    """,
+    unsafe_allow_html=True,
+)
+st.markdown("")  # spacer
 # ─────────────────────────────────────────────────────────────────────────────
 # WHY BRSR? — Educational content for new visitors
 # ─────────────────────────────────────────────────────────────────────────────
@@ -271,9 +293,18 @@ try:
             use_container_width=True,
         )
         st.markdown(
-            "<p style='text-align:center; color:#666; font-size:13px; margin-top:6px;'>"
-            "9 pages · References IPCC, CEA, CPHEEO, SEBI BRSR guidelines"
-            "</p>",
+            """
+            <p style='text-align:center; color:#666; font-size:13px; margin-top:6px;'>
+                9 pages · References IPCC, CEA, CPHEEO, SEBI BRSR guidelines
+            </p>
+            <p style='text-align:center; font-size:13px; color:#666; margin-top:4px;'>
+                Download not working on mobile? 
+                <a href='https://github.com/Meetv9/brsr-msme-tool/raw/main/assets/Ecosetu_P6_Methodology.pdf' 
+                   target='_top' style='color:#0F4C2C; font-weight:600;'>
+                   Open the PDF directly →
+                </a>
+            </p>
+            """,
             unsafe_allow_html=True,
         )
 except FileNotFoundError:
