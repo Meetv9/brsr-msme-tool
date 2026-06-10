@@ -29,8 +29,17 @@ LITRES_PER_PERSON_PER_DAY = 40  # Standard MSME water benchmark
 # ─────────────────────────────────────────────────────────────────────────────
 # ESTIMATION ENGINE
 # ─────────────────────────────────────────────────────────────────────────────
-def estimate_units_from_bill(monthly_bill_rs):
-    return monthly_bill_rs / ELECTRICITY_RATE_PER_UNIT
+def estimate_units_from_bill(monthly_bill_rs, tariff_rs_per_unit=None):
+    """
+    Estimate kWh from a monthly bill amount.
+
+    If tariff_rs_per_unit is provided (e.g. user enters their actual ₹/unit
+    from their bill), uses that. Otherwise falls back to the national-average
+    MSME tariff constant. This single change makes the function support
+    state-level / per-user tariff overrides without breaking any existing call.
+    """
+    rate = tariff_rs_per_unit if tariff_rs_per_unit and tariff_rs_per_unit > 0 else ELECTRICITY_RATE_PER_UNIT
+    return monthly_bill_rs / rate
 
 def kwh_to_gj(kwh):
     return round(kwh * KWH_TO_GJ, 4)
@@ -366,16 +375,49 @@ if st.session_state.p6_mode == "quick":
             unsafe_allow_html=True
         )
 
-        monthly_bill = st.number_input(
-            "Average monthly electricity bill (₹)",
-            min_value=0,
-            value=p6.get("monthly_bill", 0),
-            help="Check your last 3 months' bills and take the average."
-        )
-        p6["monthly_bill"] = monthly_bill
+        col_bill, col_rate = st.columns([2, 1])
+
+        with col_bill:
+            monthly_bill = st.number_input(
+                "Average monthly electricity bill (₹)",
+                min_value=0,
+                value=p6.get("monthly_bill", 0),
+                help="Check your last 3 months' bills and take the average.",
+                key="q1_monthly_bill",
+            )
+            p6["monthly_bill"] = monthly_bill
+
+        with col_rate:
+            tariff = st.number_input(
+                "Your ₹/unit",
+                min_value=1.0,
+                max_value=20.0,
+                value=float(p6.get("tariff_rs_per_unit", ELECTRICITY_RATE_PER_UNIT)),
+                step=0.50,
+                help=(
+                    "Default ₹8/unit is a conservative national-average commercial "
+                    "MSME tariff. For a more accurate kWh estimate, find the "
+                    "'rate per unit' or 'tariff' line on any recent electricity "
+                    "bill and enter your actual figure. Industrial users in India "
+                    "typically pay between ₹6.50 and ₹9.50."
+                ),
+                key="q1_tariff",
+            )
+            p6["tariff_rs_per_unit"] = tariff
 
         if monthly_bill > 0:
-            monthly_units = estimate_units_from_bill(monthly_bill)
+            monthly_units = estimate_units_from_bill(monthly_bill, tariff)
+            
+            # Trust-building touch: show the user what their override changed
+            if abs(tariff - ELECTRICITY_RATE_PER_UNIT) > 0.01:
+                default_units = monthly_bill / ELECTRICITY_RATE_PER_UNIT
+                pct_diff = ((monthly_units - default_units) / default_units) * 100
+                direction = "higher" if pct_diff > 0 else "lower"
+                st.caption(
+                    f"📐 Using your tariff of ₹{tariff:.2f}/unit → estimated kWh is "
+                    f"**{abs(pct_diff):.1f}% {direction}** than the ₹8 default. "
+                    f"This flows through to your energy, Scope 2 and intensity figures."
+                )
             yearly_units = monthly_units * 12
             yearly_gj = kwh_to_gj(yearly_units)
             scope2 = electricity_to_co2_tonnes(yearly_units)
