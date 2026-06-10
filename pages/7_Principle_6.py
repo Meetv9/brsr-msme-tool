@@ -437,66 +437,103 @@ if st.session_state.p6_mode == "quick":
             "Annual = 1,200 litres diesel."
         )
 
-        uses_fuel = st.radio(
-            "Does your business use diesel, petrol, or LPG?",
-            ["No — we only use grid electricity",
-             "Yes — we use diesel/petrol (generator or vehicle)",
-             "Yes — we use LPG/PNG for cooking or heating"],
-            index=["No — we only use grid electricity",
-                   "Yes — we use diesel/petrol (generator or vehicle)",
-                   "Yes — we use LPG/PNG for cooking or heating"].index(
-                p6.get("fuel_type", "No — we only use grid electricity")
-            )
+        # Multi-select: an MSME can have BOTH diesel AND LPG (and grid is always Scope 2 from Q1)
+        fuel_sources = st.multiselect(
+            "Which of these fuel sources do you use? (select all that apply)",
+            options=[
+                "Diesel / Petrol (generator or vehicle)",
+                "LPG / PNG (cooking, heating, ovens)",
+            ],
+            default=p6.get("fuel_sources", []),
+            help="Most MSMEs have a mix — e.g. grid electricity (already covered in Q1) PLUS diesel for the DG set PLUS LPG in the canteen. Pick everything that applies.",
         )
-        p6["fuel_type"] = uses_fuel
+        p6["fuel_sources"] = fuel_sources
 
-        if uses_fuel.startswith("Yes — we use diesel"):
+        # Track each source separately so we can sum them into total Scope 1
+        scope1_diesel = 0.0
+        scope1_lpg = 0.0
+
+        # ── DIESEL INPUT (only shown if user picked it) ──────────────────────
+        if "Diesel / Petrol (generator or vehicle)" in fuel_sources:
+            st.markdown("**⛽ Diesel / Petrol usage**")
             diesel_monthly = st.number_input(
                 "Approximately how many litres of diesel/petrol per month?",
                 min_value=0,
                 value=p6.get("diesel_monthly", 0),
-                help="Check fuel receipts or estimate from generator running hours."
+                help="Check fuel receipts or estimate from generator running hours.",
+                key="q2_diesel_monthly",
             )
             p6["diesel_monthly"] = diesel_monthly
             diesel_yearly = diesel_monthly * 12
             p6["diesel_litres_yr"] = diesel_yearly
-            scope1 = diesel_to_co2_tonnes(diesel_yearly)
-            p6["scope1_co2"] = scope1
+            scope1_diesel = diesel_to_co2_tonnes(diesel_yearly)
             fuel_cost = diesel_yearly * 90
 
             if diesel_yearly > 0:
                 calc(
                     f"Yearly diesel: {diesel_yearly:,} litres | "
-                    f"Scope 1 emissions: {scope1:.3f} tonnes CO₂"
+                    f"Diesel Scope 1: {scope1_diesel:.3f} tonnes CO₂"
                 )
                 money("Annual diesel cost estimate", fuel_cost)
 
-                if scope1 > 5:
+                if scope1_diesel > 5:
                     warn(
-                        f"High diesel emissions ({scope1:.1f} tonnes CO₂). "
+                        f"High diesel emissions ({scope1_diesel:.1f} tonnes CO₂). "
                         "Consider reducing generator hours or switching to solar."
                     )
+        else:
+            # User unchecked diesel - clear stored values to avoid stale data
+            p6["diesel_monthly"] = 0
+            p6["diesel_litres_yr"] = 0
 
-        elif uses_fuel.startswith("Yes — we use LPG"):
+        # ── LPG INPUT (only shown if user picked it) ─────────────────────────
+        if "LPG / PNG (cooking, heating, ovens)" in fuel_sources:
+            st.markdown("**🔥 LPG / PNG usage**")
             lpg_monthly = st.number_input(
                 "How many kg of LPG per month?",
                 min_value=0,
-                value=p6.get("lpg_monthly", 0)
+                value=p6.get("lpg_monthly", 0),
+                key="q2_lpg_monthly",
             )
             p6["lpg_monthly"] = lpg_monthly
             lpg_yearly = lpg_monthly * 12
             scope1_lpg = round((lpg_yearly * LPG_CO2_PER_KG) / 1000, 4)
-            p6["scope1_co2"] = scope1_lpg
             p6["lpg_kg_yr"] = lpg_yearly
+
             if lpg_yearly > 0:
                 calc(
                     f"Yearly LPG: {lpg_yearly} kg | "
-                    f"Scope 1 emissions: {scope1_lpg:.3f} tonnes CO₂"
+                    f"LPG Scope 1: {scope1_lpg:.3f} tonnes CO₂"
                 )
         else:
+            p6["lpg_monthly"] = 0
+            p6["lpg_kg_yr"] = 0
+
+        # ── SUM SCOPE 1 FROM ALL SELECTED SOURCES ────────────────────────────
+        total_scope1 = round(scope1_diesel + scope1_lpg, 4)
+        p6["scope1_co2"] = total_scope1
+        # Keep breakdowns available for the report
+        p6["scope1_diesel_co2"] = scope1_diesel
+        p6["scope1_lpg_co2"] = scope1_lpg
+
+        # ── DISPLAY TOTAL SCOPE 1 ────────────────────────────────────────────
+        if len(fuel_sources) == 0:
             p6["scope1_co2"] = 0
-            p6["diesel_litres_yr"] = 0
-            good("No direct fuel use — zero Scope 1 emissions. Excellent.")
+            good("No direct fuel use selected — Scope 1 emissions are zero. Excellent.")
+            st.caption(
+                "💡 If you actually do use diesel or LPG, please go back and tick the boxes above — "
+                "leaving Scope 1 at zero when fuels are used would understate your emissions in the BRSR report."
+            )
+        elif total_scope1 > 0:
+            st.success(
+                f"🌍 **Total Scope 1 emissions** (from all selected fuel sources): "
+                f"**{total_scope1:.2f} tonnes CO₂** per year"
+            )
+            if scope1_diesel > 0 and scope1_lpg > 0:
+                st.caption(
+                    f"Breakdown — Diesel: {scope1_diesel:.3f} tCO₂  ·  "
+                    f"LPG: {scope1_lpg:.3f} tCO₂"
+                )
 
         c_back, c_next = st.columns(2)
         with c_back:
