@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from sidebar_footer import render_sidebar_footer
+from sidebar_footer import render_sidebar_footer, render_journey_progress
 render_sidebar_footer()
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -11,6 +11,8 @@ st.set_page_config(
     page_icon="🤝",
     layout="centered"
 )
+
+render_journey_progress(8)
 
 # ─────────────────────────────────────────────────────────────────────────────
 # CSS
@@ -1649,35 +1651,28 @@ else:
 
             cd = p789.get("p9_complaint_data", {})
 
-            ch = st.columns(5)
-            ch[0].markdown("**Category**")
-            ch[1].markdown("**Cur: Received**")
-            ch[2].markdown("**Cur: Pending**")
-            ch[3].markdown("**Prev: Received**")
-            ch[4].markdown("**Prev: Pending**")
-
             for cat in complaint_cats:
-                cr = st.columns(5)
-                cr[0].markdown(f"*{cat}*")
-                cd[f"{cat}_cur_rec"] = cr[1].number_input(
-                    f"{cat} cr", min_value=0,
+                st.markdown(f"**{cat}**")
+                cr = st.columns(4)
+                cd[f"{cat}_cur_rec"] = cr[0].number_input(
+                    "Cur: Received", min_value=0,
                     value=cd.get(f"{cat}_cur_rec", 0),
-                    key=f"f_cp_{cat}_cr", label_visibility="collapsed"
+                    key=f"f_cp_{cat}_cr"
                 )
-                cd[f"{cat}_cur_pen"] = cr[2].number_input(
-                    f"{cat} cp", min_value=0,
+                cd[f"{cat}_cur_pen"] = cr[1].number_input(
+                    "Cur: Pending", min_value=0,
                     value=cd.get(f"{cat}_cur_pen", 0),
-                    key=f"f_cp_{cat}_cp", label_visibility="collapsed"
+                    key=f"f_cp_{cat}_cp"
                 )
-                cd[f"{cat}_prev_rec"] = cr[3].number_input(
-                    f"{cat} pr", min_value=0,
+                cd[f"{cat}_prev_rec"] = cr[2].number_input(
+                    "Prev: Received", min_value=0,
                     value=cd.get(f"{cat}_prev_rec", 0),
-                    key=f"f_cp_{cat}_pr", label_visibility="collapsed"
+                    key=f"f_cp_{cat}_pr"
                 )
-                cd[f"{cat}_prev_pen"] = cr[4].number_input(
-                    f"{cat} pp", min_value=0,
+                cd[f"{cat}_prev_pen"] = cr[3].number_input(
+                    "Prev: Pending", min_value=0,
                     value=cd.get(f"{cat}_prev_pen", 0),
-                    key=f"f_cp_{cat}_pp", label_visibility="collapsed"
+                    key=f"f_cp_{cat}_pp"
                 )
 
             p789["p9_complaint_data"] = cd

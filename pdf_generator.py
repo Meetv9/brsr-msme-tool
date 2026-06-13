@@ -283,6 +283,8 @@ def render_section_a(pdf, d):
     pdf.sub_heading("I. Company Identity")
     pdf.kv_row("Company Name", d.get("company_name"), shaded=True)
     pdf.kv_row("CIN Number", d.get("cin") or "N/A (Proprietorship/Partnership)")
+    pdf.kv_row("PAN of Entity", d.get("pan") or "Not provided", shaded=True)
+    pdf.kv_row("GSTIN", d.get("gstin") or "Not GST-registered")
     pdf.kv_row("Year of Incorporation", d.get("year_started"), shaded=True)
     pdf.kv_row("Business Type", d.get("ownership"))
     pdf.kv_row("Financial Year", d.get("financial_year"), shaded=True)
@@ -427,8 +429,28 @@ def render_section_a(pdf, d):
                    f"{d.get('turnover_fy3', 0)}%"], widths, shaded=True)
     pdf.ln(2)
 
-    # ── X. CSR ───────────────────────────────────────────────────────────
-    pdf.sub_heading("X. CSR (Section 135, Companies Act 2013)")
+    # ── X. Holding / Subsidiary / Associate / JV Companies ───────────────
+    pdf.sub_heading("X. Holding, Subsidiary, Associate & JV Companies")
+    subs = [s for s in d.get("subsidiaries", []) if s.get("name")]
+    if subs:
+        cols = ["S.No.", "Company Name", "Relationship", "% Shares Held"]
+        widths = [16, 84, 60, 25]
+        pdf.table_header(cols, widths)
+        for i, s in enumerate(subs, 1):
+            pdf.table_row(
+                [str(i),
+                 clean(s.get("name", "-"))[:52],
+                 clean(s.get("rel", "-"))[:34],
+                 f"{s.get('shares', 0)}%"],
+                widths, shaded=(i % 2 == 0)
+            )
+    else:
+        pdf.kv_row("Related Companies",
+                   "None - single business entity")
+    pdf.ln(2)
+
+    # ── XI. CSR ──────────────────────────────────────────────────────────
+    pdf.sub_heading("XI. CSR (Section 135, Companies Act 2013)")
     csr = str(d.get("csr_applicable", "Not Applicable"))
     if "Not Applicable" in csr:
         pdf.kv_row("CSR Applicability", "Not Applicable - below threshold")
@@ -439,7 +461,7 @@ def render_section_a(pdf, d):
     pdf.ln(2)
 
     # ── XI. Grievances ───────────────────────────────────────────────────
-    pdf.sub_heading("XI. Complaints & Grievance Mechanism")
+    pdf.sub_heading("XII. Complaints & Grievance Mechanism")
     has_g = d.get("has_grievance", False)
     pdf.kv_row("Grievance Mechanism in Place",
                "Yes" if has_g else "No - Not yet established")
@@ -455,7 +477,7 @@ def render_section_a(pdf, d):
 
     # ── XII. ESG Issues ─────────────────────────────────────────────────
     pdf.add_page()
-    pdf.sub_heading("XII. Material ESG Risks & Opportunities")
+    pdf.sub_heading("XIII. Material ESG Risks & Opportunities")
     issues = [iss for iss in d.get("issues", []) if iss.get("topic")]
     if issues:
         cols = ["Issue", "Type", "Why It Matters", "How We Manage It"]
@@ -1718,6 +1740,73 @@ def render_recommendations(pdf, data):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# METHODOLOGY & SOURCES APPENDIX
+# ─────────────────────────────────────────────────────────────────────────────
+def render_methodology(pdf, data):
+    """Appendix documenting the standards, emission factors and assumptions
+    behind the figures in this report — so a bank, auditor or buyer can see
+    how each number was derived."""
+    pdf.add_page()
+    pdf.section_heading("APPENDIX - METHODOLOGY & SOURCES")
+
+    pdf.paragraph(
+        "This report follows the SEBI Business Responsibility and Sustainability "
+        "Report (BRSR) format and the nine principles of the National Guidelines "
+        "on Responsible Business Conduct (NGRBC), simplified for MSME use. The "
+        "figures below were calculated from the data you entered using the "
+        "standards and conversion factors listed here."
+    )
+
+    pdf.sub_heading("Reporting frameworks")
+    pdf.kv_row("Disclosure format",
+               "SEBI BRSR (Master Circular SEBI/HO/CFD/CFD-PoD-1/P/CIR/2023/175)",
+               shaded=True)
+    pdf.kv_row("Principles", "NGRBC - 9 principles (MCA, 2019)")
+    pdf.kv_row("GHG accounting", "GHG Protocol Corporate Standard (Scope 1 & 2)",
+               shaded=True)
+
+    pdf.sub_heading("Emission factors used")
+    widths = [70, 45, 75]
+    pdf.table_header(["Source", "Factor", "Reference"], widths)
+    pdf.table_row(
+        ["Grid electricity (Scope 2)", "0.71 kg CO2/kWh",
+         "CEA CO2 Baseline Database V21.0 (Nov 2025), FY 2024-25"], widths, True)
+    pdf.table_row(
+        ["Diesel (Scope 1)", "2.68 kg CO2/litre",
+         "IPCC / GHG Protocol stationary combustion"], widths)
+    pdf.table_row(
+        ["LPG (Scope 1)", "2.98 kg CO2/kg",
+         "IPCC / GHG Protocol stationary combustion"], widths, True)
+    pdf.table_row(
+        ["Diesel energy content", "9.9 kWh/litre",
+         "Energy-equivalence conversion"], widths)
+    pdf.ln(2)
+
+    pdf.sub_heading("Estimation assumptions (used only where actual data was not entered)")
+    pdf.info_label(
+        "- Electricity from bill amount: national-average tariff of Rs.8.0/unit, "
+        "unless you entered your own Rs./unit rate.")
+    pdf.info_label(
+        "- Water tanker volume: 5,000 litres per tanker, unless overridden.")
+    pdf.info_label(
+        "- Water benchmark: ~40 litres per person per day for a typical MSME.")
+    pdf.paragraph(
+        "Where you supplied actual meter readings, bills, fuel logs or measured "
+        "quantities, those values were used directly and override the estimates "
+        "above. Estimated figures are clearly intended as starting points; for "
+        "assurance or regulatory filing, replace them with metered data.",
+        italic=True)
+
+    pdf.sub_heading("Scope of this report")
+    pdf.paragraph(
+        "This is a self-disclosure prepared by the company from its own records. "
+        "It has not been externally assured. It is not legal, tax or regulatory "
+        "advice. For SEBI BRSR Core assurance or final regulatory submission, "
+        "consult a qualified CA or ESG assurance provider."
+    )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # COVER PAGE
 # ─────────────────────────────────────────────────────────────────────────────
 def render_cover(pdf, d, overall_score):
@@ -1945,6 +2034,9 @@ def generate_brsr_pdf(data, esg_score):
 
     # Recommendations
     render_recommendations(pdf, data)
+
+    # Methodology & sources appendix
+    render_methodology(pdf, data)
 
     # Disclaimer
     pdf.ln(6)

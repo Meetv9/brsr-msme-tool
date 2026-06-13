@@ -40,7 +40,7 @@ st.markdown(
     """
     <div style='background:#fff8e1; border:1px solid #ffcc80;
                 border-radius:8px; padding:10px 14px;
-                font-size:13px; color:#5d4037; margin: 8px 0 16px 0;
+                font-size:13px; color:#5d4037; margin: 32px 0 20px 0;
                 line-height:1.5;'>
         💡 <b>Opened this from LinkedIn, Instagram, or WhatsApp?</b>
         For sign-up + PDF downloads to work properly, tap the 
@@ -72,132 +72,249 @@ except (AttributeError, TypeError):
 # ─────────────────────────────────────────────────────────────────────────────
 st.markdown("""
 <style>
-    .block-container { padding-top: 4rem; max-width: 1000px; margin-left: auto; margin-right: auto; }
+    @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap');
+
+    :root {
+        --eco-deep: #0F4C2C;
+        --eco-green: #16A34A;
+        --eco-mint: #DCFCE7;
+        --eco-ink: #0B1F16;
+        --eco-slate: #4B5D55;
+        --eco-indigo: #6366F1;
+    }
+
+    html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
+    h1, h2, h3, h4 { font-family: 'Sora', sans-serif !important; letter-spacing: -0.02em; }
+
+    .block-container { padding-top: 2.5rem; max-width: 1020px; margin-left: auto; margin-right: auto; }
+
+    /* ── Animated mesh hero ─────────────────────────────── */
+    .eco-hero {
+        position: relative; overflow: hidden;
+        border-radius: 24px; padding: 46px 38px 40px;
+        margin: 6px 0 14px;
+        background:
+            radial-gradient(120% 120% at 0% 0%, rgba(22,163,74,0.30) 0%, rgba(22,163,74,0) 45%),
+            radial-gradient(120% 120% at 100% 0%, rgba(99,102,241,0.28) 0%, rgba(99,102,241,0) 42%),
+            radial-gradient(130% 130% at 80% 100%, rgba(16,124,67,0.30) 0%, rgba(16,124,67,0) 50%),
+            linear-gradient(135deg, #07291A 0%, #0F4C2C 55%, #0B3A22 100%);
+        box-shadow: 0 24px 60px -28px rgba(15,76,44,0.65);
+    }
+    .eco-hero::after {
+        content: ""; position: absolute; inset: -40%;
+        background: conic-gradient(from 0deg at 50% 50%, transparent 0deg, rgba(220,252,231,0.07) 120deg, transparent 240deg);
+        animation: ecospin 22s linear infinite; pointer-events: none;
+    }
+    @keyframes ecospin { to { transform: rotate(360deg); } }
+    .eco-hero > * { position: relative; z-index: 1; }
+
+    .eco-eyebrow {
+        display: inline-flex; align-items: center; gap: 8px;
+        font-size: 11.5px; font-weight: 600; letter-spacing: 2px;
+        text-transform: uppercase; color: #BBF7D0;
+        background: rgba(220,252,231,0.10); border: 1px solid rgba(220,252,231,0.22);
+        padding: 6px 14px; border-radius: 999px; margin-bottom: 18px;
+    }
+    .eco-dot { width: 7px; height: 7px; border-radius: 50%; background: #4ADE80;
+               box-shadow: 0 0 0 0 rgba(74,222,128,0.7); animation: ecopulse 2s infinite; }
+    @keyframes ecopulse {
+        0% { box-shadow: 0 0 0 0 rgba(74,222,128,0.6); }
+        70% { box-shadow: 0 0 0 8px rgba(74,222,128,0); }
+        100% { box-shadow: 0 0 0 0 rgba(74,222,128,0); }
+    }
+    .eco-h1 {
+        font-family: 'Sora', sans-serif; font-weight: 800;
+        font-size: clamp(30px, 5.2vw, 50px); line-height: 1.05;
+        color: #FFFFFF; margin: 0 0 16px;
+    }
+    .eco-h1 .grad {
+        background: linear-gradient(90deg, #4ADE80, #A7F3D0 60%, #C7D2FE);
+        -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .eco-sub {
+        font-size: clamp(14px, 2.2vw, 17px); line-height: 1.6;
+        color: #CDEAD9; max-width: 620px; margin: 0 0 24px;
+    }
+    .eco-cta-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+    .eco-btn-primary {
+        display: inline-flex; align-items: center; gap: 9px;
+        padding: 14px 26px; border-radius: 12px; text-decoration: none;
+        font-weight: 700; font-size: 15.5px; color: #07291A;
+        background: linear-gradient(180deg, #6EE7A0, #22C55E);
+        box-shadow: 0 12px 26px -10px rgba(34,197,94,0.8);
+        transition: transform .18s ease, box-shadow .18s ease;
+    }
+    .eco-btn-primary:hover { transform: translateY(-2px); box-shadow: 0 18px 34px -10px rgba(34,197,94,0.9); }
+    .eco-btn-ghost {
+        display: inline-flex; align-items: center; gap: 8px;
+        padding: 13px 22px; border-radius: 12px; text-decoration: none;
+        font-weight: 600; font-size: 15px; color: #EAFBF1;
+        border: 1px solid rgba(220,252,231,0.32); background: rgba(220,252,231,0.06);
+        transition: background .18s ease, border-color .18s ease;
+    }
+    .eco-btn-ghost:hover { background: rgba(220,252,231,0.14); border-color: rgba(220,252,231,0.55); }
+    .eco-hero-note { font-size: 12.5px; color: #9FD3B4; margin-top: 14px; }
+
+    /* ── Stat band ──────────────────────────────────────── */
+    .eco-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 18px 0 8px; }
+    .eco-stat {
+        background: #FFFFFF; border: 1px solid #E6F0EA; border-radius: 16px;
+        padding: 16px 14px; text-align: center;
+        box-shadow: 0 8px 22px -18px rgba(15,76,44,0.5);
+    }
+    .eco-stat .num { font-family: 'Sora', sans-serif; font-weight: 800; font-size: 22px; color: var(--eco-deep); }
+    .eco-stat .lbl { font-size: 11.5px; color: var(--eco-slate); margin-top: 3px; }
+    @media (max-width: 640px) {
+        .eco-stats { grid-template-columns: repeat(2, 1fr); }
+        .eco-hero { padding: 34px 22px 30px; }
+    }
+
+    /* ── Feature cards ──────────────────────────────────── */
+    .eco-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin: 8px 0; }
+    @media (max-width: 760px) { .eco-grid { grid-template-columns: 1fr; } }
+    .eco-card {
+        background: #FFFFFF; border: 1px solid #E6F0EA; border-radius: 18px;
+        padding: 20px 18px; transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+    }
+    .eco-card:hover { transform: translateY(-3px); border-color: #BBF7D0;
+                      box-shadow: 0 18px 40px -22px rgba(15,76,44,0.55); }
+    .eco-card .ic {
+        width: 42px; height: 42px; border-radius: 12px; display: flex;
+        align-items: center; justify-content: center; font-size: 20px; margin-bottom: 12px;
+        background: var(--eco-mint);
+    }
+    .eco-card h4 { font-size: 16px; color: var(--eco-ink); margin: 0 0 6px; }
+    .eco-card p { font-size: 13px; color: var(--eco-slate); line-height: 1.55; margin: 0; }
+
+    .eco-section-title { font-family:'Sora',sans-serif; font-weight:700; font-size: 22px;
+                         color: var(--eco-ink); margin: 6px 0 4px; }
+    .eco-section-kicker { font-size:11.5px; font-weight:600; letter-spacing:2px; text-transform:uppercase;
+                          color: var(--eco-green); margin-bottom: 2px; }
+
+    /* ── Functional classes (kept for progress + score) ── */
     .hero-box {
         background: linear-gradient(135deg, #e8f5e9, #f1f8e9);
         border: 2px solid #66bb6a; border-radius: 16px;
         padding: 24px; margin: 16px 0; text-align: center;
     }
-    .progress-card {
-        border: 1px solid #e0e0e0; border-radius: 12px;
-        padding: 16px; margin: 8px 0;
-    }
-    .score-big {
-        font-size: 56px; font-weight: 700;
-        color: #1b5e20; margin: 8px 0;
-    }
+    .progress-card { border: 1px solid #E6F0EA; border-radius: 16px; padding: 18px; margin: 8px 0;
+                     box-shadow: 0 8px 22px -20px rgba(15,76,44,0.5); }
+    .score-big { font-family:'Sora',sans-serif; font-size: 56px; font-weight: 800; color: #0F4C2C; margin: 8px 0; }
     .section-link {
-        background: #f5f5f5; border-left: 4px solid #43a047;
-        padding: 12px 16px; margin: 8px 0; border-radius: 0 8px 8px 0;
-        font-size: 14px;
+        background: #F6FBF8; border-left: 4px solid var(--eco-green);
+        padding: 12px 16px; margin: 8px 0; border-radius: 0 10px 10px 0;
+        font-size: 14px; color: var(--eco-ink);
     }
-    .done-tick {
-        color: #2e7d32; font-weight: 700; font-size: 16px;
-    }
-    .pending-tick {
-        color: #bdbdbd; font-size: 16px;
-    }
+    .done-tick { color: #16A34A; font-weight: 700; font-size: 16px; }
+    .pending-tick { color: #C7D2CC; font-size: 16px; }
 </style>
 """, unsafe_allow_html=True)
 
 # ─────────────────────────────────────────────────────────────────────────────
 # HERO — Ecosetu Branding
 # ─────────────────────────────────────────────────────────────────────────────
-col_logo, col_text = st.columns([1, 2.5])
-
-with col_logo:
-    st.image(
-        str(_BASE_DIR / "assets" / "ecosetu_logo_large.png"),
-        use_container_width=True
-    )
-
-with col_text:
-    st.markdown("""
-<div style="padding-top:10px;">
-    <div style="font-size:11px; font-weight:600; color:#6366F1;
-                letter-spacing:2px; margin-bottom:6px;">
-        BRSR COMPLIANCE PLATFORM
-    </div>
-    <div style="font-size:26px; font-weight:700; color:#0F172A;
-                line-height:1.2; margin-bottom:8px;">
-        Making Indian businesses<br>go green.
-    </div>
-    <div style="font-size:14px; color:#64748B; line-height:1.5;">
-        Bank-ready BRSR sustainability reports in 60 minutes —
-        purpose-built for Indian MSMEs.
-    </div>
-</div>
-""", unsafe_allow_html=True)
-
-# Trust badges row
-st.markdown("")
-trust_col1, trust_col2, trust_col3, trust_col4 = st.columns(4)
-with trust_col1:
-    st.markdown(
-        '<div style="text-align:center; padding:12px 4px; background:#F8FAFC; '
-        'border-radius:8px; border:1px solid #E2E8F0;">'
-        '<div style="font-size:18px;">🆓</div>'
-        '<div style="font-size:11px; color:#64748B; margin-top:2px;">Free to use</div>'
-        '</div>',
-        unsafe_allow_html=True
-    )
-with trust_col2:
-    st.markdown(
-        '<div style="text-align:center; padding:12px 4px; background:#F8FAFC; '
-        'border-radius:8px; border:1px solid #E2E8F0;">'
-        '<div style="font-size:18px;">🔒</div>'
-        '<div style="font-size:11px; color:#64748B; margin-top:2px;">Privacy-first</div>'
-        '</div>',
-        unsafe_allow_html=True
-    )
-with trust_col3:
-    st.markdown(
-        '<div style="text-align:center; padding:12px 4px; background:#F8FAFC; '
-        'border-radius:8px; border:1px solid #E2E8F0;">'
-        '<div style="font-size:18px;">⚡</div>'
-        '<div style="font-size:11px; color:#64748B; margin-top:2px;">60-min report</div>'
-        '</div>',
-        unsafe_allow_html=True
-    )
-with trust_col4:
-    st.markdown(
-        '<div style="text-align:center; padding:12px 4px; background:#F8FAFC; '
-        'border-radius:8px; border:1px solid #E2E8F0;">'
-        '<div style="font-size:18px;">🇮🇳</div>'
-        '<div style="font-size:11px; color:#64748B; margin-top:2px;">Built for India</div>'
-        '</div>',
-        unsafe_allow_html=True
-    )
-
-# ─────────────────────────────────────────────────────────────────────────
-# FOUNDING 100 CTA
-# ─────────────────────────────────────────────────────────────────────────
-st.markdown("")  # spacer
 st.markdown(
     """
-    <div style='display:flex; justify-content:center; margin: 12px 0;'>
-        <a href='https://forms.gle/ZAvGwN25sCPT3gU3A' 
-           target='_top'
-           style='display:inline-block; padding:14px 28px;
-                  background:#6366F1; color:white;
-                  border-radius:10px; text-decoration:none;
-                  font-size:16px; font-weight:600;
-                  box-shadow: 0 2px 8px rgba(99,102,241,0.3);'>
-            🌱 Become a Founding Member — Free for Life
-        </a>
+    <div class="eco-hero">
+        <div class="eco-eyebrow">
+            <svg width="14" height="14" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+                <g transform="translate(15,12)">
+                    <rect x="0" y="0" width="6" height="56" rx="3" fill="#A7F3D0"/>
+                    <rect x="0" y="0" width="38" height="6" rx="3" fill="#A7F3D0"/>
+                    <rect x="0" y="25" width="28" height="6" rx="3" fill="#4ADE80"/>
+                    <rect x="0" y="50" width="38" height="6" rx="3" fill="#A7F3D0"/>
+                </g>
+            </svg>
+            Ecosetu · BRSR for Indian MSMEs
+        </div>
+        <div class="eco-h1">
+            Turn your factory's numbers into a<br>
+            <span class="grad">bank-ready sustainability report.</span>
+        </div>
+        <div class="eco-sub">
+            BRSR is the language banks, big buyers, and EU importers now speak.
+            Ecosetu translates your everyday business data into an audit-ready
+            BRSR report — in about 60 minutes, with zero jargon and zero cost.
+        </div>
+        <div class="eco-cta-row">
+            <a class="eco-btn-primary" href="https://forms.gle/ZAvGwN25sCPT3gU3A"
+               target="_blank" rel="noopener">🌱 Become a Founding Member — Free for Life</a>
+            <a class="eco-btn-ghost" href="#what-is-brsr">How it works ↓</a>
+        </div>
+        <div class="eco-hero-note">First 100 companies only · No payment · No trial expiry · No catch.</div>
     </div>
-    <p style='text-align:center; color:#555; font-size:14px; margin-top:8px;'>
-        First 100 companies only. No payment, no trial expiry, no catch.
-    </p>
     """,
     unsafe_allow_html=True,
 )
-st.markdown("")  # spacer
+
+# Stat band
+st.markdown(
+    """
+    <div class="eco-stats">
+        <div class="eco-stat"><div class="num">9</div><div class="lbl">NGRBC principles</div></div>
+        <div class="eco-stat"><div class="num">~60 min</div><div class="lbl">to a full report</div></div>
+        <div class="eco-stat"><div class="num">100%</div><div class="lbl">in your browser</div></div>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
+
+# Feature cards — why Ecosetu
+st.markdown('<div style="height:10px"></div>', unsafe_allow_html=True)
+st.markdown('<div class="eco-section-kicker">Why Ecosetu</div>', unsafe_allow_html=True)
+st.markdown('<div class="eco-section-title">Built for an MSME, not a Big-4 corporate</div>', unsafe_allow_html=True)
+st.markdown(
+    """
+    <div class="eco-grid">
+        <div class="eco-card">
+            <div class="ic">⚡</div>
+            <h4>Quick Mode</h4>
+            <p>Answer 10–15 plain-language questions per principle. We do the
+               scoring, GHG maths, and water intensity for you.</p>
+        </div>
+        <div class="eco-card">
+            <div class="ic">🇮🇳</div>
+            <h4>Indian context</h4>
+            <p>Indian regulatory terms, CEA grid factors, IPCC
+               fuel factors — every number sourced and defensible.</p>
+        </div>
+        <div class="eco-card">
+            <div class="ic">📄</div>
+            <h4>Bank-ready PDF</h4>
+            <p>An audit-ready, BRSR-format report you can hand to a bank,
+               buyer, or auditor — with a methodology appendix.</p>
+        </div>
+        <div class="eco-card">
+            <div class="ic">💼</div>
+            <h4>Tier-aware</h4>
+            <p>Sole proprietor? We hide board, KMP and shareholder questions
+               that don't apply to you.</p>
+        </div>
+        <div class="eco-card">
+            <div class="ic">🔒</div>
+            <h4>Privacy-first</h4>
+            <p>Your data stays in your browser session. No account, no
+               server storage, no data collection.</p>
+        </div>
+        <div class="eco-card">
+            <div class="ic">🌉</div>
+            <h4>Green compliance, bridged</h4>
+            <p>From confused to compliant — Ecosetu bridges the gap between
+               your shop floor and what regulators expect.</p>
+        </div>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
+st.markdown('<div style="height:8px"></div>', unsafe_allow_html=True)
 # ─────────────────────────────────────────────────────────────────────────────
 # WHY BRSR? — Educational content for new visitors
 # ─────────────────────────────────────────────────────────────────────────────
 st.markdown("---")
-st.markdown("### 📖 What is BRSR & Why It Matters")
+st.markdown('<div id="what-is-brsr"></div>', unsafe_allow_html=True)
+st.markdown('<div class="eco-section-kicker">The basics</div>', unsafe_allow_html=True)
+st.markdown('<div class="eco-section-title">📖 What is BRSR & why it matters</div>', unsafe_allow_html=True)
+st.markdown('<div style="height:6px"></div>', unsafe_allow_html=True)
 
 with st.expander("**What is BRSR?**  (1 min read)", expanded=False):
     st.markdown("""
@@ -225,7 +342,7 @@ company). But here's why MSMEs are doing it voluntarily:
 | Reason | What it unlocks |
 |--------|-----------------|
 | 🏦 **Bank loans** | Lower interest rates from SBI, HDFC, ICICI on ESG-disclosed loans |
-| 🌍 **Export contracts** | EU buyers demand sustainability disclosure (CSRD coming 2027) |
+| 🌍 **Export contracts** | EU buyers ask Indian vendors for ESG data under the revised CSRD (post-Omnibus); the largest EU groups report from 2028 on FY 2027 data |
 | 🏭 **Big buyer contracts** | Tata, Reliance, ITC, Marico now ask suppliers for ESG data |
 | 🪙 **Government schemes** | PLI, RAMP, Aatmanirbhar Bharat schemes prioritize compliant MSMEs |
 | 💰 **Green funding** | SIDBI, NABARD offer concessional rates to ESG-disclosed MSMEs |
@@ -240,7 +357,7 @@ This tool is built **specifically for Indian MSMEs**, not big corporates.
 Here's what makes it different:
 
 - ⚡ **Quick Mode** — Answer just 10–15 questions per principle in plain language
-- 🌐 **Indian context** — Examples in Gujarat/Saurashtra/Indian regulatory terms
+- 🌐 **Indian context** — Examples in Indian regulatory terms
 - 💼 **Tier-aware** — If you're a sole proprietor, we hide board/KMP questions
 - 🧮 **Auto-calculations** — We compute scores, GHG emissions, water intensity for you
 - 📄 **BRSR-format PDF** — Audit-ready report you can send to banks/buyers
@@ -265,6 +382,24 @@ browser session.
 - Electricity bills (annual kWh consumption)
 - PCB Consent to Operate certificate
 - A rough idea of your sourcing patterns
+""")
+
+with st.expander("**What's changing in 2025–2028?**", expanded=False):
+    st.markdown("""
+The disclosure landscape is tightening on two fronts — worth knowing where
+you fit.
+
+**India — BRSR Core (SEBI):**
+- **Top 250** listed companies: BRSR Core assurance + value-chain disclosures already apply (FY 2025-26).
+- **Top 1,000** listed companies: BRSR Core expands to all of them by FY 2026-27, with full **reasonable assurance** targeted by FY 2027-28.
+- Result: large buyers increasingly push these expectations down to their MSME suppliers.
+
+**Europe — the rules were made lighter in Dec 2025:**
+- Earlier, many EU companies had to publish detailed ESG reports. In December 2025 the EU **relaxed** these rules.
+- Now **only very large companies** (more than 1,000 staff and over €450M turnover) must report.
+- The deadline was also pushed back — the next big batch reports in **2028**, using their 2027 data.
+- Smaller companies are **no longer forced** to report, and they only need to ask their **direct suppliers** for data.
+- **What this means for you:** EU buyers still ask their Indian suppliers for ESG data — just under the lighter, simpler rules now. A clean BRSR keeps you ready either way.
 """)
 
 st.markdown("")
@@ -299,8 +434,8 @@ try:
             </p>
             <p style='text-align:center; font-size:13px; color:#666; margin-top:4px;'>
                 Download not working on mobile? 
-                <a href='https://github.com/Meetv9/brsr-msme-tool/raw/main/assets/Ecosetu_P6_Methodology.pdf' 
-                   target='_top' style='color:#0F4C2C; font-weight:600;'>
+                <a href='https://github.com/Meetv9/brsr-msme-tool/raw/main/assets/Ecosetu_P6_Methodology.pdf'
+                   target='_blank' rel='noopener' style='color:#0F4C2C; font-weight:600;'>
                    Open the PDF directly →
                 </a>
             </p>

@@ -1,5 +1,5 @@
 import streamlit as st
-from sidebar_footer import render_sidebar_footer
+from sidebar_footer import render_sidebar_footer, render_journey_progress
 render_sidebar_footer()
 # ─── TIER LOGIC (NEW) ──────────────────────────────────────────
 import sys
@@ -23,6 +23,8 @@ st.set_page_config(
     page_icon="👷",
     layout="centered"  # centered for phone-friendly experience
 )
+
+render_journey_progress(5)
 
 # ─────────────────────────────────────────────────────────────────────────────
 # CSS
@@ -225,22 +227,37 @@ def prev_full():
 # BANK READY SCORE
 # ─────────────────────────────────────────────────────────────────────────────
 def calc_bank_score():
+    # Reads both Quick-Mode and Full-Mode session keys so the score is correct
+    # regardless of which mode the user completed.
     score = 0
-    total = p3.get("total_workforce", 1)
+    total = p3.get("total_workforce", 1) or 1
 
     health = p3.get("health_covered", 0)
     if safe_pct(health, total) >= 80: score += 20
     elif safe_pct(health, total) >= 50: score += 10
 
-    if p3.get("pf_deposited") in ["Yes", "Y"]: score += 20
+    # PF: Quick stores a sentence in pf_deposited; Full stores pf_dep == "Y".
+    pf_ok = ("yes" in str(p3.get("pf_deposited", "")).lower()) or (p3.get("pf_dep") == "Y")
+    if pf_ok: score += 20
 
     injuries = p3.get("lti_total", 0)
     if injuries == 0: score += 20
     elif injuries <= 2: score += 10
 
-    if p3.get("grievance") in ["Yes"]: score += 20
+    # Grievance: Quick stores 'grievance'; Full stores per-category griev_*.
+    griev_ok = str(p3.get("grievance", "")).startswith("Yes") or any(
+        p3.get(f"griev_{gk}") == "Yes"
+        for gk in ["perm_wkr", "contract_wkr", "perm_emp", "contract_emp"]
+    )
+    if griev_ok: score += 20
 
-    training_pct = safe_pct(p3.get("training_count", 0), total)
+    # Training: Quick stores training_count; Full stores per-category trained counts.
+    full_trained = max(
+        p3.get("tr_emp_hs_cur", 0) + p3.get("tr_wkr_hs_cur", 0),
+        p3.get("tr_emp_sk_cur", 0) + p3.get("tr_wkr_sk_cur", 0),
+    )
+    trained = max(p3.get("training_count", 0), full_trained)
+    training_pct = safe_pct(trained, total)
     if training_pct >= 80: score += 20
     elif training_pct >= 50: score += 10
 
@@ -1600,35 +1617,28 @@ else:
                 ("high_cons", "High Consequence Injuries"),
             ]
 
-            ic = st.columns(5)
-            ic[0].markdown("**Type**")
-            ic[1].markdown("**Employees (Cur)**")
-            ic[2].markdown("**Workers (Cur)**")
-            ic[3].markdown("**Employees (Prev)**")
-            ic[4].markdown("**Workers (Prev)**")
-
             for ikey, ilabel in inc_types:
-                row = st.columns(5)
-                row[0].markdown(f"*{ilabel}*")
-                p3[f"{ikey}_ec"] = row[1].number_input(
-                    ilabel, min_value=0,
+                st.markdown(f"**{ilabel}**")
+                row = st.columns(4)
+                p3[f"{ikey}_ec"] = row[0].number_input(
+                    "Employees (Cur)", min_value=0,
                     value=p3.get(f"{ikey}_ec", 0),
-                    key=f"f_{ikey}_ec", label_visibility="collapsed"
+                    key=f"f_{ikey}_ec"
                 )
-                p3[f"{ikey}_wc"] = row[2].number_input(
-                    ilabel, min_value=0,
+                p3[f"{ikey}_wc"] = row[1].number_input(
+                    "Workers (Cur)", min_value=0,
                     value=p3.get(f"{ikey}_wc", 0),
-                    key=f"f_{ikey}_wc", label_visibility="collapsed"
+                    key=f"f_{ikey}_wc"
                 )
-                p3[f"{ikey}_ep"] = row[3].number_input(
-                    ilabel, min_value=0,
+                p3[f"{ikey}_ep"] = row[2].number_input(
+                    "Employees (Prev)", min_value=0,
                     value=p3.get(f"{ikey}_ep", 0),
-                    key=f"f_{ikey}_ep", label_visibility="collapsed"
+                    key=f"f_{ikey}_ep"
                 )
-                p3[f"{ikey}_wp"] = row[4].number_input(
-                    ilabel, min_value=0,
+                p3[f"{ikey}_wp"] = row[3].number_input(
+                    "Workers (Prev)", min_value=0,
                     value=p3.get(f"{ikey}_wp", 0),
-                    key=f"f_{ikey}_wp", label_visibility="collapsed"
+                    key=f"f_{ikey}_wp"
                 )
 
             p3["lti_total"] = p3.get("lti_ec", 0) + p3.get("lti_wc", 0)

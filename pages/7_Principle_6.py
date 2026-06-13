@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from sidebar_footer import render_sidebar_footer
+from sidebar_footer import render_sidebar_footer, render_journey_progress
 render_sidebar_footer()
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -11,6 +11,8 @@ st.set_page_config(
     page_icon="🌿",
     layout="centered"
 )
+
+render_journey_progress(7)
 
 # ─────────────────────────────────────────────────────────────────────────────
 # CONVERSION CONSTANTS
@@ -53,8 +55,8 @@ def diesel_to_co2_tonnes(litres):
 def electricity_to_co2_tonnes(kwh):
     return round((kwh * GRID_CO2_PER_KWH) / 1000, 4)
 
-def tankers_to_kl(tankers_per_month, months=12):
-    return round((tankers_per_month * TANKER_LITRES * months) * LITRES_TO_KL, 2)
+def tankers_to_kl(tankers_per_month, months=12, litres_per_tanker=TANKER_LITRES):
+    return round((tankers_per_month * litres_per_tanker * months) * LITRES_TO_KL, 2)
 
 def intensity(value, turnover):
     if turnover and turnover > 0:
@@ -326,8 +328,8 @@ try:
         """
         <p style='font-size:12px; color:#666; margin-top:4px;'>
             On mobile / in-app browser? 
-            <a href='https://github.com/Meetv9/brsr-msme-tool/raw/main/assets/Ecosetu_P6_Methodology.pdf' 
-               target='_top' style='color:#0F4C2C; font-weight:600;'>
+            <a href='https://github.com/Meetv9/brsr-msme-tool/raw/main/assets/Ecosetu_P6_Methodology.pdf'
+               target='_blank' rel='noopener' style='color:#0F4C2C; font-weight:600;'>
                Open the PDF directly →
             </a>
         </p>
@@ -647,14 +649,27 @@ if st.session_state.p6_mode == "quick":
                 total_water_kl += muni_monthly * 12
 
             if "Water tanker" in water_source:
-                tankers_monthly = st.number_input(
-                    "Water tankers — how many per month?",
-                    min_value=0,
-                    value=p6.get("tankers_per_month", 0),
-                    help="Each tanker holds approximately 5,000 litres = 5 kilolitres."
-                )
+                tk_c1, tk_c2 = st.columns(2)
+                with tk_c1:
+                    tankers_monthly = st.number_input(
+                        "Water tankers — how many per month?",
+                        min_value=0,
+                        value=p6.get("tankers_per_month", 0),
+                        help="Count of tanker deliveries you receive in a typical month."
+                    )
+                with tk_c2:
+                    tanker_size = st.number_input(
+                        "Litres per tanker",
+                        min_value=500,
+                        max_value=30000,
+                        step=500,
+                        value=p6.get("tanker_litres", TANKER_LITRES),
+                        help="Default 5,000 L is a standard medium tanker in western India. "
+                             "Edit this if your supplier uses a different size."
+                    )
                 p6["tankers_per_month"] = tankers_monthly
-                tanker_kl = tankers_to_kl(tankers_monthly)
+                p6["tanker_litres"] = tanker_size
+                tanker_kl = tankers_to_kl(tankers_monthly, litres_per_tanker=tanker_size)
                 total_water_kl += tanker_kl
                 if tankers_monthly > 0:
                     tanker_cost = tankers_monthly * 12 * 800
@@ -1489,23 +1504,18 @@ else:
             total_withdrawal_cur = 0
             total_withdrawal_prev = 0
 
-            wh = st.columns(3)
-            wh[0].markdown("**Source**")
-            wh[1].markdown("**Current FY (kL)**")
-            wh[2].markdown("**Previous FY (kL)**")
-
             for wkey, wlabel in water_sources_full:
-                wr = st.columns(3)
-                wr[0].markdown(f"*{wlabel}*")
-                cur_val = wr[1].number_input(
-                    wlabel, min_value=0.0,
+                st.markdown(f"**{wlabel}**")
+                wr = st.columns(2)
+                cur_val = wr[0].number_input(
+                    "Current FY (kL)", min_value=0.0,
                     value=float(wdata.get(f"{wkey}_cur", 0.0)),
-                    key=f"f_w_{wkey}_c", label_visibility="collapsed"
+                    key=f"f_w_{wkey}_c"
                 )
-                prev_val = wr[2].number_input(
-                    wlabel, min_value=0.0,
+                prev_val = wr[1].number_input(
+                    "Previous FY (kL)", min_value=0.0,
                     value=float(wdata.get(f"{wkey}_prev", 0.0)),
-                    key=f"f_w_{wkey}_p", label_visibility="collapsed"
+                    key=f"f_w_{wkey}_p"
                 )
                 wdata[f"{wkey}_cur"] = cur_val
                 wdata[f"{wkey}_prev"] = prev_val
@@ -1638,14 +1648,14 @@ else:
                                   "VOC", "HAP"]
                 air_data = p6.get("air_data", {})
                 for ap in air_pollutants:
-                    ac = st.columns(3)
-                    ac[0].markdown(f"*{ap}*")
-                    air_data[f"{ap}_cur"] = ac[1].number_input(
-                        f"{ap} cur", min_value=0.0,
+                    st.markdown(f"**{ap}**")
+                    ac = st.columns(2)
+                    air_data[f"{ap}_cur"] = ac[0].number_input(
+                        "Amount", min_value=0.0,
                         value=float(air_data.get(f"{ap}_cur", 0.0)),
-                        key=f"f_air_{ap}_c", label_visibility="collapsed"
+                        key=f"f_air_{ap}_c"
                     )
-                    ac[2].selectbox(
+                    ac[1].selectbox(
                         "Unit", ["mg/m³", "kg/year", "tonnes/year"],
                         key=f"f_air_{ap}_u"
                     )
@@ -1691,23 +1701,18 @@ else:
             waste_full = p6.get("waste_full", {})
             total_waste_cur = 0
 
-            wh = st.columns(3)
-            wh[0].markdown("**Waste Type**")
-            wh[1].markdown("**Current FY (MT)**")
-            wh[2].markdown("**Previous FY (MT)**")
-
             for wkey, wlabel in waste_categories:
-                wr = st.columns(3)
-                wr[0].markdown(f"*{wlabel}*")
-                cur_w = wr[1].number_input(
-                    wlabel, min_value=0.0, step=0.001,
+                st.markdown(f"**{wlabel}**")
+                wr = st.columns(2)
+                cur_w = wr[0].number_input(
+                    "Current FY (MT)", min_value=0.0, step=0.001,
                     value=float(waste_full.get(f"{wkey}_cur", 0.0)),
-                    key=f"f_wst_{wkey}_c", label_visibility="collapsed"
+                    key=f"f_wst_{wkey}_c"
                 )
-                prev_w = wr[2].number_input(
-                    wlabel, min_value=0.0, step=0.001,
+                prev_w = wr[1].number_input(
+                    "Previous FY (MT)", min_value=0.0, step=0.001,
                     value=float(waste_full.get(f"{wkey}_prev", 0.0)),
-                    key=f"f_wst_{wkey}_p", label_visibility="collapsed"
+                    key=f"f_wst_{wkey}_p"
                 )
                 waste_full[f"{wkey}_cur"] = cur_w
                 waste_full[f"{wkey}_prev"] = prev_w

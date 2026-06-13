@@ -6,8 +6,12 @@ import streamlit as st
 st.set_page_config(
     page_title="BRSR Section C | Principle 1",
     page_icon="⚖️",
-    layout="wide"
+    layout="centered"
 )
+
+from sidebar_footer import render_whatsapp_fab, render_journey_progress
+render_whatsapp_fab()
+render_journey_progress(3)
 
 # ─────────────────────────────────────────────────────────────────────────────
 # CSS
@@ -188,11 +192,33 @@ def go(step):
 # ─────────────────────────────────────────────────────────────────────────────
 def calc_p1_score():
     score = 0
+    # Anti-bribery policy in place — real answer.
     if p1.get("anti_bribery_policy") == "Yes": score += 20
+    # Anti-corruption training actually delivered.
     if p1.get("training_covered", 0) > 0: score += 20
-    if p1.get("fines_answered"): score += 15
-    if p1.get("disciplinary_answered"): score += 15
-    if p1.get("conflict_answered"): score += 15
+
+    # Ethics disclosures (fines / disciplinary / conflict of interest):
+    # credit genuine engagement, not merely landing on the step. The
+    # *_answered flags were set on render, so a click-through scored +45.
+    fines_clean = p1.get("has_fines") == "No — zero fines this year"
+    fines_listed = (
+        str(p1.get("has_fines", "")).startswith("Yes")
+        and any((f or {}).get("authority") for f in p1.get("fines_list", []))
+    )
+    disc_total = (p1.get("disc_directors_cur", 0) + p1.get("disc_kmp_cur", 0) +
+                  p1.get("disc_emp_cur", 0) + p1.get("disc_wkr_cur", 0))
+    coi_total = p1.get("coi_dir_cur", 0) + p1.get("coi_kmp_cur", 0)
+    ethics_engaged = (fines_clean or fines_listed or
+                      disc_total > 0 or coi_total > 0)
+
+    # Fines: clean record explicitly stated, or fines fully listed.
+    if fines_clean or fines_listed: score += 15
+    # Disciplinary & conflict-of-interest disclosures, once the user has
+    # genuinely engaged with the ethics step.
+    if ethics_engaged:
+        score += 15   # disciplinary disclosure
+        score += 15   # conflict-of-interest disclosure
+    # Corrective-action narrative actually written.
     if p1.get("corrective_action"): score += 15
     return min(score, 100)
 

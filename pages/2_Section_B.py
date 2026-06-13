@@ -6,8 +6,12 @@ import streamlit as st
 st.set_page_config(
     page_title="BRSR Section B | MSME Tool",
     page_icon="📋",
-    layout="wide"
+    layout="centered"
 )
+
+from sidebar_footer import render_whatsapp_fab, render_journey_progress
+render_whatsapp_fab()
+render_journey_progress(2)
 
 # ─────────────────────────────────────────────────────────────────────────────
 # CUSTOM CSS — matches Section A style
@@ -122,7 +126,6 @@ CERTIFICATIONS_LIST = [
     "ISO 14001 (Environmental Management)",
     "ISO 45001 (Occupational Health & Safety)",
     "SA 8000 (Social Accountability)",
-    "OHSAS 18001 (Health & Safety)",
     "BIS / ISI Mark",
     "FSSAI (Food Safety)",
     "Fairtrade Certified",

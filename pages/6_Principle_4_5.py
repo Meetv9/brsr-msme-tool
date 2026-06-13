@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from sidebar_footer import render_sidebar_footer
+from sidebar_footer import render_sidebar_footer, render_journey_progress
 render_sidebar_footer()
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -11,6 +11,8 @@ st.set_page_config(
     page_icon="🤝",
     layout="centered"
 )
+
+render_journey_progress(6)
 
 # ─────────────────────────────────────────────────────────────────────────────
 # CSS
@@ -210,15 +212,52 @@ def calc_bank_score():
     score = 0
     if p.get("stakeholders_selected"):      score += 15
     if p.get("engage_freq"):                score += 10
-    if p.get("min_wage") == "Yes":          score += 20
+
+    # Minimum wage: Quick stores a sentence ("Yes — all workers…");
+    # Full mode stores wage_data{cat:{total,equal,more}}.
+    wage_data = p.get("wage_data", {})
+    wage_total = sum(v.get("total", 0) for v in wage_data.values())
+    wage_at_or_above = sum(
+        v.get("equal", 0) + v.get("more", 0) for v in wage_data.values()
+    )
+    min_wage_ok = (
+        str(p.get("min_wage", "")).startswith("Yes")
+        or (wage_total > 0 and wage_at_or_above >= wage_total)
+    )
+    if min_wage_ok:                         score += 20
+
     if p.get("focal_point") == "Yes":       score += 15
     if p.get("hr_in_contracts") == "Yes":   score += 10
-    total = p.get("total_workforce", 1)
-    tr_pct = safe_pct(p.get("hr_trained", 0), total)
+
+    # HR training: Quick stores hr_trained vs total_workforce;
+    # Full mode stores hr_training_data{cat:{total_cur,trained_cur,…}}.
+    total = p.get("total_workforce", 1) or 1
+    tr_data = p.get("hr_training_data", {})
+    full_total = sum(v.get("total_cur", 0) for v in tr_data.values())
+    full_trained = sum(v.get("trained_cur", 0) for v in tr_data.values())
+    quick_pct = safe_pct(p.get("hr_trained", 0), total)
+    full_pct = safe_pct(full_trained, full_total) if full_total > 0 else 0
+    tr_pct = max(quick_pct, full_pct)
     if tr_pct >= 80:   score += 20
     elif tr_pct >= 50: score += 10
-    if (p.get("child_labour_complaints", 0) == 0 and
-            p.get("forced_labour_complaints", 0) == 0): score += 10
+
+    # Clean labour record: only credit when complaint data was actually
+    # entered (Quick complaint_* keys or Full complaint_data) AND child +
+    # forced labour complaints are zero. Never award for an empty form.
+    comp_data = p.get("complaint_data", {})
+    quick_keys = [k for k in p if str(k).startswith("complaint_")]
+    has_complaint_data = bool(comp_data) or bool(quick_keys)
+    child_total = (
+        p.get("complaint_child_labour", 0)
+        + comp_data.get("child_labour", {}).get("filed_cur", 0)
+    )
+    forced_total = (
+        p.get("complaint_forced_labour", 0)
+        + comp_data.get("forced_labour", {}).get("filed_cur", 0)
+    )
+    if has_complaint_data and child_total == 0 and forced_total == 0:
+        score += 10
+
     return min(score, 100)
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -458,14 +497,15 @@ if st.session_state.p45_mode == "quick":
             "Failure to comply can result in labour department penalties."
         )
         example(
-            "In Gujarat, the minimum wage for unskilled workers is approximately "
-            "₹350-400 per day. If you pay ₹400 or above to all workers, "
-            "the answer is Yes."
+            "Minimum wages are set by each state and revised periodically (with a "
+            "variable dearness allowance), and differ by skill level — unskilled, "
+            "semi-skilled, skilled. If every worker earns at least your state's "
+            "current notified minimum wage for their skill level, the answer is Yes."
         )
 
         st.markdown(
-            "💡 Check your state's current minimum wage at "
-            "**labourcommissioner.gujarat.gov.in** or ask your CA."
+            "💡 Check your **state Labour Department's** latest minimum-wage "
+            "notification for your district and skill category, or ask your CA."
         )
 
         p["min_wage"] = st.radio(
@@ -1116,31 +1156,25 @@ else:
 
             wage_data = p.get("wage_data", {})
 
-            wh = st.columns(4)
-            wh[0].markdown("**Category**")
-            wh[1].markdown("**Total**")
-            wh[2].markdown("**= Min Wage**")
-            wh[3].markdown("**> Min Wage**")
-
             for wkey, wlabel in categories:
-                wr = st.columns(4)
-                wr[0].markdown(f"*{wlabel}*")
+                st.markdown(f"**{wlabel}**")
+                wr = st.columns(3)
                 wd = wage_data.get(wkey, {})
 
-                total_w = wr[1].number_input(
+                total_w = wr[0].number_input(
                     "Total", min_value=0,
                     value=wd.get("total", 0),
-                    key=f"f_wt_{wkey}", label_visibility="collapsed"
+                    key=f"f_wt_{wkey}"
                 )
-                equal_w = wr[2].number_input(
-                    "Equal", min_value=0,
+                equal_w = wr[1].number_input(
+                    "= Min Wage", min_value=0,
                     value=wd.get("equal", 0),
-                    key=f"f_we_{wkey}", label_visibility="collapsed"
+                    key=f"f_we_{wkey}"
                 )
-                more_w = wr[3].number_input(
-                    "More", min_value=0,
+                more_w = wr[2].number_input(
+                    "> Min Wage", min_value=0,
                     value=wd.get("more", 0),
-                    key=f"f_wm_{wkey}", label_visibility="collapsed"
+                    key=f"f_wm_{wkey}"
                 )
 
                 if total_w > 0 and (equal_w + more_w) != total_w:
@@ -1219,37 +1253,30 @@ else:
 
             tr_data = p.get("hr_training_data", {})
 
-            th = st.columns(5)
-            th[0].markdown("**Category**")
-            th[1].markdown("**Total (Current)**")
-            th[2].markdown("**Trained (Current)**")
-            th[3].markdown("**Total (Previous)**")
-            th[4].markdown("**Trained (Previous)**")
-
             for tkey, tlabel in tr_cats:
-                tr = st.columns(5)
-                tr[0].markdown(f"*{tlabel}*")
+                st.markdown(f"**{tlabel}**")
+                tr = st.columns(4)
                 td = tr_data.get(tkey, {})
 
-                total_cur = tr[1].number_input(
-                    "Total cur", min_value=0,
+                total_cur = tr[0].number_input(
+                    "Total (Current)", min_value=0,
                     value=td.get("total_cur", 0),
-                    key=f"f_trt_{tkey}_c", label_visibility="collapsed"
+                    key=f"f_trt_{tkey}_c"
                 )
-                trained_cur = tr[2].number_input(
-                    "Trained cur", min_value=0,
+                trained_cur = tr[1].number_input(
+                    "Trained (Current)", min_value=0,
                     value=td.get("trained_cur", 0),
-                    key=f"f_trtr_{tkey}_c", label_visibility="collapsed"
+                    key=f"f_trtr_{tkey}_c"
                 )
-                total_prev = tr[3].number_input(
-                    "Total prev", min_value=0,
+                total_prev = tr[2].number_input(
+                    "Total (Previous)", min_value=0,
                     value=td.get("total_prev", 0),
-                    key=f"f_trt_{tkey}_p", label_visibility="collapsed"
+                    key=f"f_trt_{tkey}_p"
                 )
-                trained_prev = tr[4].number_input(
-                    "Trained prev", min_value=0,
+                trained_prev = tr[3].number_input(
+                    "Trained (Previous)", min_value=0,
                     value=td.get("trained_prev", 0),
-                    key=f"f_trtr_{tkey}_p", label_visibility="collapsed"
+                    key=f"f_trtr_{tkey}_p"
                 )
 
                 pct_cur = safe_pct(trained_cur, total_cur)
@@ -1335,39 +1362,32 @@ else:
                 ("other_hr",          "Other Human Rights Issues"),
             ]
 
-            ch = st.columns(5)
-            ch[0].markdown("**Type**")
-            ch[1].markdown("**Filed (Current)**")
-            ch[2].markdown("**Pending (Current)**")
-            ch[3].markdown("**Filed (Previous)**")
-            ch[4].markdown("**Pending (Previous)**")
-
             comp_data = p.get("complaint_data", {})
 
             for ckey, clabel in complaint_types:
-                cr = st.columns(5)
-                cr[0].markdown(f"*{clabel}*")
+                st.markdown(f"**{clabel}**")
+                cr = st.columns(4)
                 cd = comp_data.get(ckey, {})
 
-                filed_cur = cr[1].number_input(
-                    "Filed cur", min_value=0,
+                filed_cur = cr[0].number_input(
+                    "Filed (Current)", min_value=0,
                     value=cd.get("filed_cur", 0),
-                    key=f"f_cf_{ckey}", label_visibility="collapsed"
+                    key=f"f_cf_{ckey}"
                 )
-                pending_cur = cr[2].number_input(
-                    "Pending cur", min_value=0,
+                pending_cur = cr[1].number_input(
+                    "Pending (Current)", min_value=0,
                     value=cd.get("pending_cur", 0),
-                    key=f"f_cp_{ckey}", label_visibility="collapsed"
+                    key=f"f_cp_{ckey}"
                 )
-                filed_prev = cr[3].number_input(
-                    "Filed prev", min_value=0,
+                filed_prev = cr[2].number_input(
+                    "Filed (Previous)", min_value=0,
                     value=cd.get("filed_prev", 0),
-                    key=f"f_cfp_{ckey}", label_visibility="collapsed"
+                    key=f"f_cfp_{ckey}"
                 )
-                pending_prev = cr[4].number_input(
-                    "Pending prev", min_value=0,
+                pending_prev = cr[3].number_input(
+                    "Pending (Previous)", min_value=0,
                     value=cd.get("pending_prev", 0),
-                    key=f"f_cpp_{ckey}", label_visibility="collapsed"
+                    key=f"f_cpp_{ckey}"
                 )
 
                 comp_data[ckey] = {

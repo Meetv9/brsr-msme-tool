@@ -8,7 +8,7 @@ a unified BRSR-audit-ready PDF.
 import streamlit as st
 import sys
 from pathlib import Path
-from sidebar_footer import render_sidebar_footer
+from sidebar_footer import render_sidebar_footer, render_journey_progress
 render_sidebar_footer()
 
 # Make parent folder importable for business_profile & pdf_generator
@@ -23,6 +23,8 @@ st.set_page_config(
     page_icon="📄",
     layout="centered"
 )
+
+render_journey_progress(9)
 
 init_business_profile()
 

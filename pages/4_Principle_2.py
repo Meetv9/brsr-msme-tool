@@ -7,8 +7,12 @@ import pandas as pd
 st.set_page_config(
     page_title="BRSR Section C | Principle 2",
     page_icon="♻️",
-    layout="wide"
+    layout="centered"
 )
+
+from sidebar_footer import render_whatsapp_fab, render_journey_progress
+render_whatsapp_fab()
+render_journey_progress(4)
 
 # ─────────────────────────────────────────────────────────────────────────────
 # CSS
@@ -167,16 +171,51 @@ def go(step):
 # ─────────────────────────────────────────────────────────────────────────────
 def calc_p2_score():
     score = 0
-    # Essential (70%)
-    if p2.get("rd_capex_done"):    score += 17
-    if p2.get("sourcing_done"):    score += 18
-    if p2.get("endoflife_done"):   score += 17
-    if p2.get("epr_done"):         score += 18
-    # Leadership (30%)
+    # Essential (70%) — credit substantive disclosure, not a page visit.
+
+    # R&D / Capex: real investment figures entered (current or previous FY).
+    if any(p2.get(k, 0) for k in (
+            "rd_total", "rd_sustain", "capex_total", "capex_sustain",
+            "rd_total_prev", "rd_sustain_prev",
+            "capex_total_prev", "capex_sustain_prev")):
+        score += 17
+
+    # Sustainable sourcing: an affirmative procedure, backed by a written
+    # description or a non-zero sourced %. Informal-but-undocumented = half.
+    sourcing = str(p2.get("has_sourcing_procedure", "No"))
+    if sourcing == "Yes" and (p2.get("sourcing_desc") or
+                              p2.get("sourcing_pct_cur", 0) > 0):
+        score += 18
+    elif sourcing.startswith("Informal"):
+        score += 9
+
+    # End-of-life waste: at least one stream disclosed with real quantities
+    # or a handling description.
+    waste_keys = ("plastics", "ewaste", "hazardous", "other")
+    if any(
+        p2.get(f"{k}_reused_cur", 0) or p2.get(f"{k}_recycled_cur", 0) or
+        p2.get(f"{k}_disposed_cur", 0) or
+        (p2.get(f"has_{k}") == "Yes" and p2.get(f"{k}_process"))
+        for k in waste_keys
+    ):
+        score += 17
+
+    # EPR: a definite applicability answer. If applicable, PCB alignment
+    # must be stated (not left at "Not sure") for full credit.
+    epr = str(p2.get("epr_applicable", ""))
+    if epr == "No":
+        score += 18
+    elif epr == "Yes":
+        aligned = p2.get("epr_pcb_aligned", "")
+        score += 18 if aligned and aligned != "Not sure" else 9
+
+    # Leadership (30%) — already real-data based.
     if st.session_state.lca_entries:         score += 8
     if st.session_state.risk_entries:        score += 7
     if p2.get("recycled_input_cur", 0) > 0:  score += 5
-    if p2.get("reclaimed_mt_done"):          score += 5
+    if any(p2.get(f"l4_{k}_reused_cur", 0) or p2.get(f"l4_{k}_recycled_cur", 0) or
+           p2.get(f"l4_{k}_disposed_cur", 0) for k in waste_keys):
+        score += 5
     if st.session_state.reclaimed_categories: score += 5
     return min(score, 100)
 
@@ -539,59 +578,56 @@ elif st.session_state.step_c_p2 == 3:
                 )
 
                 st.markdown("**Quantities (metric tonnes):**")
-                col_h = st.columns(6)
-                col_h[0].markdown("**Period**")
-                col_h[1].markdown("**Re-Used**")
-                col_h[2].markdown("**Recycled**")
-                col_h[3].markdown("**Safely Disposed**")
-                col_h[4].markdown("**Total**")
-                col_h[5].markdown("**Recycled %**")
 
-                # Current year row
-                rc = st.columns(6)
-                rc[0].markdown("Current FY")
-                cur_reuse = rc[1].number_input(
-                    "Reused", min_value=0.0, step=0.1,
+                # Current FY — self-labeling inputs (stack cleanly on mobile)
+                st.markdown("**Current FY**")
+                rc = st.columns(3)
+                cur_reuse = rc[0].number_input(
+                    "Re-Used (MT)", min_value=0.0, step=0.1,
                     value=float(p2.get(f"{key}_reused_cur", 0.0)),
-                    key=f"{key}_reused_cur", label_visibility="collapsed"
+                    key=f"{key}_reused_cur"
                 )
-                cur_recycle = rc[2].number_input(
-                    "Recycled", min_value=0.0, step=0.1,
+                cur_recycle = rc[1].number_input(
+                    "Recycled (MT)", min_value=0.0, step=0.1,
                     value=float(p2.get(f"{key}_recycled_cur", 0.0)),
-                    key=f"{key}_recycled_cur", label_visibility="collapsed"
+                    key=f"{key}_recycled_cur"
                 )
-                cur_dispose = rc[3].number_input(
-                    "Disposed", min_value=0.0, step=0.1,
+                cur_dispose = rc[2].number_input(
+                    "Safely Disposed (MT)", min_value=0.0, step=0.1,
                     value=float(p2.get(f"{key}_disposed_cur", 0.0)),
-                    key=f"{key}_disposed_cur", label_visibility="collapsed"
+                    key=f"{key}_disposed_cur"
                 )
                 cur_total = cur_reuse + cur_recycle + cur_dispose
                 cur_pct = safe_pct(cur_reuse + cur_recycle, cur_total)
-                rc[4].markdown(f"**{round(cur_total, 2)} MT**")
-                rc[5].markdown(f"**{cur_pct}%**")
+                st.caption(
+                    f"Total: **{round(cur_total, 2)} MT** · "
+                    f"Recycled/Re-used: **{cur_pct}%**"
+                )
 
-                # Previous year row
-                rp = st.columns(6)
-                rp[0].markdown("Previous FY")
-                prev_reuse = rp[1].number_input(
-                    "Reused prev", min_value=0.0, step=0.1,
+                # Previous FY — self-labeling inputs
+                st.markdown("**Previous FY**")
+                rp = st.columns(3)
+                prev_reuse = rp[0].number_input(
+                    "Re-Used (MT)", min_value=0.0, step=0.1,
                     value=float(p2.get(f"{key}_reused_prev", 0.0)),
-                    key=f"{key}_reused_prev", label_visibility="collapsed"
+                    key=f"{key}_reused_prev"
                 )
-                prev_recycle = rp[2].number_input(
-                    "Recycled prev", min_value=0.0, step=0.1,
+                prev_recycle = rp[1].number_input(
+                    "Recycled (MT)", min_value=0.0, step=0.1,
                     value=float(p2.get(f"{key}_recycled_prev", 0.0)),
-                    key=f"{key}_recycled_prev", label_visibility="collapsed"
+                    key=f"{key}_recycled_prev"
                 )
-                prev_dispose = rp[3].number_input(
-                    "Disposed prev", min_value=0.0, step=0.1,
+                prev_dispose = rp[2].number_input(
+                    "Safely Disposed (MT)", min_value=0.0, step=0.1,
                     value=float(p2.get(f"{key}_disposed_prev", 0.0)),
-                    key=f"{key}_disposed_prev", label_visibility="collapsed"
+                    key=f"{key}_disposed_prev"
                 )
                 prev_total = prev_reuse + prev_recycle + prev_dispose
                 prev_pct = safe_pct(prev_reuse + prev_recycle, prev_total)
-                rp[4].markdown(f"**{round(prev_total, 2)} MT**")
-                rp[5].markdown(f"**{prev_pct}%**")
+                st.caption(
+                    f"Total: **{round(prev_total, 2)} MT** · "
+                    f"Recycled/Re-used: **{prev_pct}%**"
+                )
 
                 # Save
                 p2.update({
@@ -634,9 +670,11 @@ elif st.session_state.step_c_p2 == 4:
     badge_essential()
 
     benefit(
-        "EPR compliance protects you from heavy fines",
-        "The government can fine non-compliant businesses up to ₹1 lakh per day "
-        "under EPR rules. Documenting EPR status clearly protects you legally."
+        "EPR compliance protects you from heavy penalties",
+        "Missing your EPR targets attracts Environmental Compensation, charged by "
+        "formula on the shortfall (per tonne not collected/recycled) — it can run "
+        "into lakhs, plus possible action under the Environment (Protection) Act. "
+        "Documenting EPR status clearly protects you legally."
     )
 
     with st.container(border=True):
@@ -706,7 +744,8 @@ elif st.session_state.step_c_p2 == 4:
             if p2["epr_pcb_aligned"] == "Not yet submitted to PCB":
                 react_bad(
                     "You must submit your EPR plan to the PCB. "
-                    "Non-submission can result in fines of ₹1 lakh per day. "
+                    "Non-compliance attracts formula-based Environmental Compensation "
+                    "on your shortfall (and can run into lakhs). "
                     "Contact your state PCB office or hire a local environmental "
                     "consultant — typically costs ₹10,000–25,000 for an MSME."
                 )
@@ -991,48 +1030,43 @@ elif st.session_state.step_c_p2 == 5:
                 ("other", "Other waste")
             ]
 
-            l4_cols = st.columns([2, 1, 1, 1, 1, 1, 1])
-            l4_cols[0].markdown("**Type**")
-            l4_cols[1].markdown("**Reused (Cur)**")
-            l4_cols[2].markdown("**Recycled (Cur)**")
-            l4_cols[3].markdown("**Disposed (Cur)**")
-            l4_cols[4].markdown("**Reused (Prev)**")
-            l4_cols[5].markdown("**Recycled (Prev)**")
-            l4_cols[6].markdown("**Disposed (Prev)**")
-
             for wkey, wlabel in waste_types_l4:
-                row = st.columns([2, 1, 1, 1, 1, 1, 1])
-                row[0].markdown(f"**{wlabel}**")
-                p2[f"l4_{wkey}_reused_cur"] = row[1].number_input(
-                    f"{wkey} RC", min_value=0.0, step=0.01,
-                    value=float(p2.get(f"l4_{wkey}_reused_cur", 0.0)),
-                    key=f"l4_{wkey}_rc", label_visibility="collapsed"
-                )
-                p2[f"l4_{wkey}_recycled_cur"] = row[2].number_input(
-                    f"{wkey} RCC", min_value=0.0, step=0.01,
-                    value=float(p2.get(f"l4_{wkey}_recycled_cur", 0.0)),
-                    key=f"l4_{wkey}_rcc", label_visibility="collapsed"
-                )
-                p2[f"l4_{wkey}_disposed_cur"] = row[3].number_input(
-                    f"{wkey} DC", min_value=0.0, step=0.01,
-                    value=float(p2.get(f"l4_{wkey}_disposed_cur", 0.0)),
-                    key=f"l4_{wkey}_dc", label_visibility="collapsed"
-                )
-                p2[f"l4_{wkey}_reused_prev"] = row[4].number_input(
-                    f"{wkey} RP", min_value=0.0, step=0.01,
-                    value=float(p2.get(f"l4_{wkey}_reused_prev", 0.0)),
-                    key=f"l4_{wkey}_rp", label_visibility="collapsed"
-                )
-                p2[f"l4_{wkey}_recycled_prev"] = row[5].number_input(
-                    f"{wkey} RCP", min_value=0.0, step=0.01,
-                    value=float(p2.get(f"l4_{wkey}_recycled_prev", 0.0)),
-                    key=f"l4_{wkey}_rcp", label_visibility="collapsed"
-                )
-                p2[f"l4_{wkey}_disposed_prev"] = row[6].number_input(
-                    f"{wkey} DP", min_value=0.0, step=0.01,
-                    value=float(p2.get(f"l4_{wkey}_disposed_prev", 0.0)),
-                    key=f"l4_{wkey}_dp", label_visibility="collapsed"
-                )
+                with st.expander(wlabel, expanded=(wkey == "plastics")):
+                    st.markdown("**Current FY (MT)**")
+                    rcur = st.columns(3)
+                    p2[f"l4_{wkey}_reused_cur"] = rcur[0].number_input(
+                        "Re-Used", min_value=0.0, step=0.01,
+                        value=float(p2.get(f"l4_{wkey}_reused_cur", 0.0)),
+                        key=f"l4_{wkey}_rc"
+                    )
+                    p2[f"l4_{wkey}_recycled_cur"] = rcur[1].number_input(
+                        "Recycled", min_value=0.0, step=0.01,
+                        value=float(p2.get(f"l4_{wkey}_recycled_cur", 0.0)),
+                        key=f"l4_{wkey}_rcc"
+                    )
+                    p2[f"l4_{wkey}_disposed_cur"] = rcur[2].number_input(
+                        "Safely Disposed", min_value=0.0, step=0.01,
+                        value=float(p2.get(f"l4_{wkey}_disposed_cur", 0.0)),
+                        key=f"l4_{wkey}_dc"
+                    )
+
+                    st.markdown("**Previous FY (MT)**")
+                    rprev = st.columns(3)
+                    p2[f"l4_{wkey}_reused_prev"] = rprev[0].number_input(
+                        "Re-Used", min_value=0.0, step=0.01,
+                        value=float(p2.get(f"l4_{wkey}_reused_prev", 0.0)),
+                        key=f"l4_{wkey}_rp"
+                    )
+                    p2[f"l4_{wkey}_recycled_prev"] = rprev[1].number_input(
+                        "Recycled", min_value=0.0, step=0.01,
+                        value=float(p2.get(f"l4_{wkey}_recycled_prev", 0.0)),
+                        key=f"l4_{wkey}_rcp"
+                    )
+                    p2[f"l4_{wkey}_disposed_prev"] = rprev[2].number_input(
+                        "Safely Disposed", min_value=0.0, step=0.01,
+                        value=float(p2.get(f"l4_{wkey}_disposed_prev", 0.0)),
+                        key=f"l4_{wkey}_dp"
+                    )
 
             p2["reclaimed_mt_done"] = True
 
@@ -1139,8 +1173,12 @@ elif st.session_state.step_c_p2 == 6:
         lc2.metric("Risk Entries", len(st.session_state.risk_entries))
         lc3.metric("Recycled Input %",
                    f"{p2.get('recycled_input_cur', 0)}%")
+        reclaimed_filled = any(
+            p2.get(f"l4_{k}_reused_cur", 0) or p2.get(f"l4_{k}_recycled_cur", 0) or
+            p2.get(f"l4_{k}_disposed_cur", 0)
+            for k in ("plastics", "ewaste", "hazardous", "other"))
         lc4.metric("Reclaimed MT",
-                   "Done" if p2.get("reclaimed_mt_done") else "Not filled")
+                   "Done" if reclaimed_filled else "Not filled")
         lc5.metric("Reclaimed Categories",
                    len(st.session_state.reclaimed_categories))
 

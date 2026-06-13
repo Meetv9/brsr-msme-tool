@@ -29,9 +29,13 @@ st.set_page_config(
 
     page_icon="🌱",
 
-    layout="wide"
+    layout="centered"
 
 )
+
+from sidebar_footer import render_whatsapp_fab, render_journey_progress
+render_whatsapp_fab()
+render_journey_progress(1)
 
 
 
@@ -245,6 +249,10 @@ def calc_esg_score():
 
 def get_msme_class(turnover_lakhs):
 
+    # Turnover-based MSME limits (Govt of India, 2020): Micro ≤ ₹5 Cr,
+    # Small ≤ ₹50 Cr, Medium ≤ ₹250 Cr. Above ₹250 Cr is not an MSME.
+    # (Full MSME status also depends on plant & machinery investment.)
+
     if turnover_lakhs == 0:
 
         return "-"
@@ -257,9 +265,13 @@ def get_msme_class(turnover_lakhs):
 
         return "🟡 Small Enterprise"
 
-    else:
+    elif turnover_lakhs <= 25000:
 
         return "🟠 Medium Enterprise"
+
+    else:
+
+        return "🔴 Large Enterprise (above MSME turnover limit)"
 
 
 
@@ -491,11 +503,55 @@ if st.session_state.step == 1:
 
                 "⚠️ Which year did you start your business?",
 
-                min_value=1900, max_value=2025,
+                min_value=1900, max_value=2026,
 
                 value=d.get("year_started", 2015)
 
             )
+
+            d["pan"] = st.text_input(
+
+                "PAN of the entity",
+
+                value=d.get("pan", ""),
+
+                placeholder="e.g. AABCU9603R",
+
+                help="The 10-character PAN issued to your business by the Income Tax Department. Required in SEBI BRSR Section A."
+
+            ).strip().upper()
+
+            if d["pan"]:
+
+                if re.match(r'^[A-Z]{5}[0-9]{4}[A-Z]$', d["pan"]):
+
+                    st.success("✅ Valid PAN format")
+
+                else:
+
+                    st.error("❌ Invalid PAN. Format should be like: AABCU9603R")
+
+            d["gstin"] = st.text_input(
+
+                "GSTIN (if registered under GST)",
+
+                value=d.get("gstin", ""),
+
+                placeholder="e.g. 24AABCU9603R1ZM",
+
+                help="The 15-character GST Identification Number. Leave blank if your business is not GST-registered."
+
+            ).strip().upper()
+
+            if d["gstin"]:
+
+                if re.match(r'^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][0-9A-Z]Z[0-9A-Z]$', d["gstin"]):
+
+                    st.success("✅ Valid GSTIN format")
+
+                else:
+
+                    st.error("❌ Invalid GSTIN. It should be 15 characters, like: 24AABCU9603R1ZM")
 
 
 
@@ -519,9 +575,9 @@ if st.session_state.step == 1:
 
                 "⚠️ Which financial year is this report for?",
 
-                ["2024-25", "2023-24", "2022-23"],
+                ["2025-26", "2024-25", "2023-24", "2022-23"],
 
-                index=["2024-25", "2023-24", "2022-23"].index(d.get("financial_year", "2024-25"))
+                index=["2025-26", "2024-25", "2023-24", "2022-23"].index(d.get("financial_year", "2025-26"))
 
             )
 
@@ -583,7 +639,7 @@ if st.session_state.step == 1:
 
 
 
-        tip("MSME Classification (as per Govt of India): Micro = turnover up to ₹5 Crore | Small = up to ₹50 Crore | Medium = up to ₹250 Crore")
+        tip("MSME Classification (as per Govt of India): Micro = turnover up to ₹5 Crore | Small = up to ₹50 Crore | Medium = up to ₹250 Crore. Above ₹250 Crore is not an MSME. Note: official status also depends on your investment in plant & machinery — this estimate uses turnover only.")
 
 
 
@@ -655,9 +711,11 @@ if st.session_state.step == 1:
 
             )
 
-            if d["email"] and "@" not in d["email"]:
+            if d["email"] and not re.match(
 
-                st.error("Please enter a valid email address.")
+                    r'^[^@\s]+@[^@\s]+\.[^@\s]+$', d["email"].strip()):
+
+                st.error("Please enter a valid email address, e.g. info@yourbusiness.com")
 
 
 
@@ -736,6 +794,12 @@ if st.session_state.step == 1:
                 placeholder="e.g. meet@yourbusiness.com"
 
             )
+
+            if d["contact_email"] and not re.match(
+
+                    r'^[^@\s]+@[^@\s]+\.[^@\s]+$', d["contact_email"].strip()):
+
+                st.error("Please enter a valid email address.")
 
             d["contact_phone"] = st.text_input(
 
@@ -1534,11 +1598,35 @@ elif st.session_state.step == 4:
 
             go(3); st.rerun()
 
+    # Block navigation while any gender split does not reconcile with its total.
+    workforce_groups = [
+        ("Permanent employees", "perm_emp_male", "perm_emp_female", "total_perm_emp"),
+        ("Other/temporary employees", "temp_emp_male", "temp_emp_female", "total_temp_emp"),
+        ("Permanent workers", "perm_wkr_male", "perm_wkr_female", "total_perm_wkr"),
+        ("Other/temporary workers", "temp_wkr_male", "temp_wkr_female", "total_temp_wkr"),
+    ]
+    workforce_errors = [
+        f"{glabel}: Male ({d.get(m, 0)}) + Female ({d.get(f, 0)}) = "
+        f"{d.get(m, 0) + d.get(f, 0)}, but Total = {d.get(t, 0)}."
+        for glabel, m, f, t in workforce_groups
+        if d.get(t, 0) > 0 and d.get(m, 0) + d.get(f, 0) != d.get(t, 0)
+    ]
+
     with cn3:
 
         if st.button("Next: Governance & Risks →", type="primary", use_container_width=True):
 
-            go(5); st.rerun()
+            if workforce_errors:
+
+                for _e in workforce_errors:
+
+                    st.error(f"❌ {_e}")
+
+                st.warning("Please fix the workforce counts above before continuing.")
+
+            else:
+
+                go(5); st.rerun()
 # ═════════════════════════════════════════════════════════════════════════════
 # STEP 5: GOVERNANCE, CSR & BUSINESS RISKS  (Upgraded)
 # ═════════════════════════════════════════════════════════════════════════════
