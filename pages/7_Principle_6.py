@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from sidebar_footer import render_sidebar_footer, render_journey_progress
+from sidebar_footer import render_sidebar_footer, render_pagehead
 render_sidebar_footer()
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -11,8 +11,6 @@ st.set_page_config(
     page_icon="🌿",
     layout="centered"
 )
-
-render_journey_progress(7)
 
 # ─────────────────────────────────────────────────────────────────────────────
 # CONVERSION CONSTANTS
@@ -251,10 +249,11 @@ def calc_p6_score():
 # ─────────────────────────────────────────────────────────────────────────────
 if st.session_state.p6_mode is None:
 
-    st.markdown("## 🌿 Principle 6 — Environment")
-    st.markdown(
-        "**Businesses should respect and make efforts "
-        "to protect and restore the environment.**"
+    render_pagehead(
+        "Step 7 of 9 · Principle 6",
+        "Environment",
+        "Show how you protect and restore the environment — energy, "
+        "emissions, water, and waste. We do the calculations for you."
     )
     st.markdown("")
 
@@ -303,10 +302,14 @@ if st.session_state.p6_mode is None:
     st.stop()
 
 # Header
-col_h1, col_h2 = st.columns([3, 1])
-with col_h1:
-    mode_label = "⚡ Quick Mode" if st.session_state.p6_mode == "quick" else "📋 Full Mode"
-    st.markdown(f"## 🌿 Principle 6 — Environment &nbsp; `{mode_label}`")
+mode_label = "⚡ Quick Mode" if st.session_state.p6_mode == "quick" else "📋 Full Mode"
+render_pagehead(
+    f"Step 7 of 9 · Principle 6 · {mode_label}",
+    "Environment",
+    "Show how you protect and restore the environment — energy, "
+    "emissions, water, and waste. We do the calculations for you."
+)
+_, col_h2 = st.columns([3, 1])
 with col_h2:
     if st.button("Switch Mode"):
         st.session_state.p6_mode = None

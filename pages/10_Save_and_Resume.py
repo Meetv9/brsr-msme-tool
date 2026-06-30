@@ -10,7 +10,7 @@ st.set_page_config(
     layout="centered",
 )
 
-from sidebar_footer import render_sidebar_footer
+from sidebar_footer import render_sidebar_footer, render_pagehead
 from business_profile import show_sidebar_logo
 from progress_io import dump_progress, load_progress, UPLOAD_TRACKER_KEY
 
@@ -34,16 +34,13 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.title("💾 Save & Resume")
-
-st.markdown("""
-<div class='sr-hero'>
-    <h3>Pick up exactly where you left off — no account needed</h3>
-    <p>Your answers live only in your browser. Download a small <b>progress file</b>
-    any time, and re-upload it later (on any device) to restore every answer and
-    land back on the exact step you were on. Nothing is ever stored on our servers.</p>
-</div>
-""", unsafe_allow_html=True)
+render_pagehead(
+    "No account · Works on any device",
+    "Save & Resume",
+    "Download a small progress file any time and re-upload it later to restore "
+    "every answer — landing back on the exact step you left off. Nothing is ever "
+    "stored on our servers."
+)
 
 ss = st.session_state
 

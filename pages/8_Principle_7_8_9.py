@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from sidebar_footer import render_sidebar_footer, render_journey_progress
+from sidebar_footer import render_sidebar_footer, render_pagehead
 render_sidebar_footer()
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -11,8 +11,6 @@ st.set_page_config(
     page_icon="🤝",
     layout="centered"
 )
-
-render_journey_progress(8)
 
 # ─────────────────────────────────────────────────────────────────────────────
 # CSS
@@ -286,7 +284,12 @@ def build_recommendations():
 # ─────────────────────────────────────────────────────────────────────────────
 if st.session_state.p789_mode is None:
 
-    st.markdown("## 🤝 Principles 7, 8 & 9 Combined")
+    render_pagehead(
+        "Step 8 of 9 · Principles 7, 8 & 9",
+        "Policy, Community & Customers",
+        "Responsible policy advocacy, support for your local community, and "
+        "fair treatment of customers — the three smaller principles, together."
+    )
     st.markdown(
         "Because P7, P8, and P9 are each smaller than other principles, "
         "we fill them together:"
@@ -343,10 +346,14 @@ if st.session_state.p789_mode is None:
     st.stop()
 
 # Header
-col_h1, col_h2 = st.columns([3, 1])
-with col_h1:
-    mode_label = "⚡ Quick Mode" if st.session_state.p789_mode == "quick" else "📋 Full Mode"
-    st.markdown(f"## 🤝 Principles 7, 8 & 9 &nbsp; `{mode_label}`")
+mode_label = "⚡ Quick Mode" if st.session_state.p789_mode == "quick" else "📋 Full Mode"
+render_pagehead(
+    f"Step 8 of 9 · Principles 7, 8 & 9 · {mode_label}",
+    "Policy, Community & Customers",
+    "Responsible policy advocacy, support for your local community, and "
+    "fair treatment of customers — the three smaller principles, together."
+)
+_, col_h2 = st.columns([3, 1])
 with col_h2:
     if st.button("Switch Mode"):
         st.session_state.p789_mode = None

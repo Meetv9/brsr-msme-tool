@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from sidebar_footer import render_sidebar_footer, render_journey_progress
+from sidebar_footer import render_sidebar_footer, render_pagehead
 render_sidebar_footer()
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -11,8 +11,6 @@ st.set_page_config(
     page_icon="🤝",
     layout="centered"
 )
-
-render_journey_progress(6)
 
 # ─────────────────────────────────────────────────────────────────────────────
 # CSS
@@ -265,8 +263,12 @@ def calc_bank_score():
 # ─────────────────────────────────────────────────────────────────────────────
 if st.session_state.p45_mode is None:
 
-    st.markdown("## 🤝 Principles 4 & 5")
-    st.markdown("**Stakeholder Engagement** and **Human Rights**")
+    render_pagehead(
+        "Step 6 of 9 · Principles 4 & 5",
+        "Stakeholders & Human Rights",
+        "Show how you engage the people your business affects and uphold "
+        "their rights — fair treatment, grievances, and dignity at work."
+    )
     st.markdown("")
 
     c1, c2 = st.columns(2)
@@ -310,10 +312,14 @@ if st.session_state.p45_mode is None:
     st.stop()
 
 # Header
-col_h1, col_h2 = st.columns([3, 1])
-with col_h1:
-    mode_label = "⚡ Quick Mode" if st.session_state.p45_mode == "quick" else "📋 Full Mode"
-    st.markdown(f"## 🤝 Principles 4 & 5 &nbsp; `{mode_label}`")
+mode_label = "⚡ Quick Mode" if st.session_state.p45_mode == "quick" else "📋 Full Mode"
+render_pagehead(
+    f"Step 6 of 9 · Principles 4 & 5 · {mode_label}",
+    "Stakeholders & Human Rights",
+    "Show how you engage the people your business affects and uphold "
+    "their rights — fair treatment, grievances, and dignity at work."
+)
+_, col_h2 = st.columns([3, 1])
 with col_h2:
     if st.button("Switch Mode"):
         st.session_state.p45_mode = None

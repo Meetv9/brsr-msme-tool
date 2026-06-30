@@ -113,6 +113,60 @@ def render_journey_progress(step):
     )
 
 
+def render_pagehead(step, title, subtitle=""):
+    """Polished gradient page header for an inner page (replaces a bare st.title).
+
+    `step`     short kicker, e.g. "Step 3 of 9 · Principle 1"
+    `title`    the page title, e.g. "Ethics & Transparency"
+    `subtitle` optional one-line description.
+
+    Visual layer only — emits CSS + the header markup. The CSS is bundled here
+    (including the Sora font @import and the `ecospin` keyframe) so it renders
+    correctly on every inner page, not just Home. Emitted each run because
+    Streamlit re-renders markup on every rerun.
+    """
+    st.markdown(
+        """
+        <style>
+        @import url('https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&display=swap');
+        @keyframes ecospin { to { transform: rotate(360deg); } }
+        .eco-pagehead {
+            position: relative; overflow: hidden;
+            border-radius: 18px; padding: 22px 26px; margin: 2px 0 16px;
+            background:
+                radial-gradient(120% 160% at 0% 0%, rgba(22,163,74,0.26) 0%, rgba(22,163,74,0) 55%),
+                radial-gradient(130% 160% at 100% 100%, rgba(99,102,241,0.18) 0%, rgba(99,102,241,0) 55%),
+                linear-gradient(135deg, #07291A 0%, #0F4C2C 60%, #0B3A22 100%);
+            box-shadow: 0 16px 40px -26px rgba(15,76,44,0.6);
+        }
+        .eco-pagehead::after {
+            content:""; position:absolute; inset:-40%;
+            background: conic-gradient(from 0deg at 50% 50%, transparent 0deg, rgba(220,252,231,0.07) 120deg, transparent 240deg);
+            animation: ecospin 22s linear infinite; pointer-events:none;
+        }
+        .eco-pagehead > * { position: relative; z-index: 1; }
+        .eco-pagehead .step { font-size:11px; font-weight:700; letter-spacing:2px; text-transform:uppercase;
+                              color:#BBF7D0; margin-bottom:6px; }
+        .eco-pagehead h2 { font-family:'Sora',sans-serif; font-weight:800; font-size:24px;
+                           color:#FFFFFF !important; margin:0 0 4px; letter-spacing:-0.02em; }
+        .eco-pagehead p { font-size:13.5px; color:#CDEAD9; line-height:1.5; margin:0; }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+    sub = f"<p>{subtitle}</p>" if subtitle else ""
+    st.markdown(
+        f"""
+        <div class="eco-pagehead">
+            <div class="step">{step}</div>
+            <h2>{title}</h2>
+            {sub}
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
 def render_sidebar_footer():
     render_whatsapp_fab()
     with st.sidebar:

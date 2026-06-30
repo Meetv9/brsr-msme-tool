@@ -9,9 +9,8 @@ st.set_page_config(
     layout="centered"
 )
 
-from sidebar_footer import render_whatsapp_fab, render_journey_progress
+from sidebar_footer import render_whatsapp_fab, render_pagehead
 render_whatsapp_fab()
-render_journey_progress(2)
 
 # ─────────────────────────────────────────────────────────────────────────────
 # CUSTOM CSS — matches Section A style
@@ -260,8 +259,12 @@ with st.sidebar:
 # ─────────────────────────────────────────────────────────────────────────────
 # MAIN HEADER
 # ─────────────────────────────────────────────────────────────────────────────
-st.markdown("## 📋 BRSR Section B — Management & Process Disclosures")
-st.caption("Based on 9 National Guidelines for Responsible Business Conduct (NGRBC) | Simplified for MSMEs")
+render_pagehead(
+    "Step 2 of 9 · Section B",
+    "Management & Process",
+    "How your business is governed — the policies and practices behind the "
+    "9 National Guidelines for Responsible Business Conduct (NGRBC)."
+)
 
 # ─────────────────────────────────────────────────────────────────────────────
 # STEP NAVIGATION

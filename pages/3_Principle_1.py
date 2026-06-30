@@ -9,9 +9,8 @@ st.set_page_config(
     layout="centered"
 )
 
-from sidebar_footer import render_whatsapp_fab, render_journey_progress
+from sidebar_footer import render_whatsapp_fab, render_pagehead
 render_whatsapp_fab()
-render_journey_progress(3)
 
 # ─────────────────────────────────────────────────────────────────────────────
 # CSS
@@ -258,10 +257,12 @@ with st.sidebar:
 # ─────────────────────────────────────────────────────────────────────────────
 # HEADER
 # ─────────────────────────────────────────────────────────────────────────────
-st.markdown("## ⚖️ Section C — Principle 1")
-st.markdown("**Businesses should conduct and govern themselves with integrity, "
-            "and in a manner that is Ethical, Transparent and Accountable.**")
-st.caption("SEBI BRSR | Section C | P1 | Essential + Recommended + Advanced indicators")
+render_pagehead(
+    "Step 3 of 9 · Principle 1",
+    "Ethics & Transparency",
+    "Show that your business runs with integrity — ethics training, "
+    "anti-bribery measures, and how you handle any fines or complaints."
+)
 
 # Step nav
 steps = {

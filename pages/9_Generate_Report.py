@@ -8,7 +8,7 @@ a unified BRSR-audit-ready PDF.
 import streamlit as st
 import sys
 from pathlib import Path
-from sidebar_footer import render_sidebar_footer, render_journey_progress
+from sidebar_footer import render_sidebar_footer, render_pagehead
 render_sidebar_footer()
 
 # Make parent folder importable for business_profile & pdf_generator
@@ -24,11 +24,14 @@ st.set_page_config(
     layout="centered"
 )
 
-render_journey_progress(9)
-
 init_business_profile()
 
-st.title("📄 Generate Your BRSR Report")
+render_pagehead(
+    "Step 9 of 9 · Generate Report",
+    "Generate Your BRSR Report",
+    "Compile everything you've filled into one BRSR-audit-ready PDF — "
+    "your finished, ready-to-submit report."
+)
 show_tier_badge()
 show_sidebar_logo()
 

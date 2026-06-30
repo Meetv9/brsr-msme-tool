@@ -10,9 +10,8 @@ st.set_page_config(
     layout="centered"
 )
 
-from sidebar_footer import render_whatsapp_fab, render_journey_progress
+from sidebar_footer import render_whatsapp_fab, render_pagehead
 render_whatsapp_fab()
-render_journey_progress(4)
 
 # ─────────────────────────────────────────────────────────────────────────────
 # CSS
@@ -254,10 +253,12 @@ with st.sidebar:
 # ─────────────────────────────────────────────────────────────────────────────
 # HEADER
 # ─────────────────────────────────────────────────────────────────────────────
-st.markdown("## ♻️ Section C — Principle 2")
-st.markdown("**Businesses should provide goods and services in a manner "
-            "that is sustainable and safe.**")
-st.caption("4 Essential Indicators + 5 Leadership Indicators | SEBI BRSR Section C P2")
+render_pagehead(
+    "Step 4 of 9 · Principle 2",
+    "Sustainable & Safe Products",
+    "Show that your goods and services are made sustainably and safely — "
+    "R&D, sustainable sourcing, and responsible resource use."
+)
 
 # Step nav
 steps = {

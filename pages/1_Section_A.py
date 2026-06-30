@@ -33,9 +33,8 @@ st.set_page_config(
 
 )
 
-from sidebar_footer import render_whatsapp_fab, render_journey_progress
+from sidebar_footer import render_whatsapp_fab, render_pagehead
 render_whatsapp_fab()
-render_journey_progress(1)
 
 
 
@@ -361,9 +360,12 @@ with st.sidebar:
 
 # ─────────────────────────────────────────────────────────────────────────────
 
-st.markdown("## 🌱 BRSR Compliance Tool - Section A")
-
-st.caption("Simplified for MSMEs | Based on official SEBI BRSR format")
+render_pagehead(
+    "Step 1 of 9 · Section A",
+    "Company Profile",
+    "Tell us about your business — identity, finances, locations, and your "
+    "people. This is the foundation of your BRSR report."
+)
 
 
 

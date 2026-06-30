@@ -1,5 +1,5 @@
 import streamlit as st
-from sidebar_footer import render_sidebar_footer, render_journey_progress
+from sidebar_footer import render_sidebar_footer, render_pagehead
 render_sidebar_footer()
 # ─── TIER LOGIC (NEW) ──────────────────────────────────────────
 import sys
@@ -23,8 +23,6 @@ st.set_page_config(
     page_icon="👷",
     layout="centered"  # centered for phone-friendly experience
 )
-
-render_journey_progress(5)
 
 # ─────────────────────────────────────────────────────────────────────────────
 # CSS
@@ -268,7 +266,12 @@ def calc_bank_score():
 # ─────────────────────────────────────────────────────────────────────────────
 if st.session_state.p3_mode is None:
 
-    st.markdown("## 👷 Principle 3 — Employee & Worker Wellbeing")
+    render_pagehead(
+        "Step 5 of 9 · Principle 3",
+        "Employee & Worker Wellbeing",
+        "Show how you look after your people — health insurance, PF, safety "
+        "training, and fair treatment of workers."
+    )
     st.markdown("How would you like to fill this section?")
     st.markdown("")
 
@@ -320,10 +323,14 @@ if st.session_state.p3_mode is None:
 # ─────────────────────────────────────────────────────────────────────────────
 # HEADER (shown in both modes)
 # ─────────────────────────────────────────────────────────────────────────────
-col_h1, col_h2 = st.columns([3, 1])
-with col_h1:
-    mode_label = "⚡ Quick Mode" if st.session_state.p3_mode == "quick" else "📋 Full Mode"
-    st.markdown(f"## 👷 Principle 3 &nbsp; `{mode_label}`")
+mode_label = "⚡ Quick Mode" if st.session_state.p3_mode == "quick" else "📋 Full Mode"
+render_pagehead(
+    f"Step 5 of 9 · Principle 3 · {mode_label}",
+    "Employee & Worker Wellbeing",
+    "Show how you look after your people — health insurance, PF, safety "
+    "training, and fair treatment of workers."
+)
+_, col_h2 = st.columns([3, 1])
 with col_h2:
     if st.button("Switch Mode"):
         st.session_state.p3_mode = None
