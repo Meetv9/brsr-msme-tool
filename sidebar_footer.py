@@ -9,12 +9,32 @@ WHATSAPP_NUMBER = "919409417490"
 WHATSAPP_MESSAGE = "Hi%20Meet%2C%20I%27m%20using%20Ecosetu%20for%20BRSR%20and%20have%20a%20question."
 
 
+def render_save_resume_link():
+    """Prominent 'Save / Resume progress' link in the sidebar.
+
+    Called from render_whatsapp_fab() so it appears on EVERY page (every page runs
+    render_whatsapp_fab, directly or via render_sidebar_footer). Streamlit's default
+    multipage nav also lists the page; this gives it a clear, always-visible entry.
+    """
+    try:
+        with st.sidebar:
+            st.page_link(
+                "pages/10_Save_and_Resume.py",
+                label="Save / Resume progress",
+                icon="💾",
+            )
+    except Exception:
+        # st.page_link unavailable or page not found — default nav still covers it.
+        pass
+
+
 def render_whatsapp_fab():
     """Floating WhatsApp contact button, fixed to the bottom-right of the viewport.
 
     Call exactly once per page. render_sidebar_footer() already calls it, so pages
     that render the sidebar footer should NOT call this directly as well.
     """
+    render_save_resume_link()
     st.markdown(
         f"""
         <a href="https://wa.me/{WHATSAPP_NUMBER}?text={WHATSAPP_MESSAGE}"
