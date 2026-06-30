@@ -207,6 +207,56 @@ st.markdown("""
     }
     .done-tick { color: #16A34A; font-weight: 700; font-size: 16px; }
     .pending-tick { color: #C7D2CC; font-size: 16px; }
+
+    /* ── Save & Resume highlight banner ─────────────────── */
+    .eco-save {
+        position: relative; overflow: hidden;
+        display: flex; align-items: center; gap: 20px;
+        border-radius: 20px; padding: 22px 26px; margin: 20px 0 6px;
+        text-decoration: none;
+        background:
+            radial-gradient(120% 150% at 0% 0%, rgba(99,102,241,0.22) 0%, rgba(99,102,241,0) 55%),
+            radial-gradient(130% 150% at 100% 100%, rgba(74,222,128,0.18) 0%, rgba(74,222,128,0) 55%),
+            linear-gradient(135deg, #0E3D26 0%, #145236 60%, #10402A 100%);
+        border: 1px solid rgba(167,243,208,0.25);
+        box-shadow: 0 18px 44px -26px rgba(15,76,44,0.7);
+        transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+    }
+    .eco-save:hover { transform: translateY(-3px); border-color: rgba(167,243,208,0.55);
+                      box-shadow: 0 24px 54px -24px rgba(15,76,44,0.85); }
+    .eco-save::after {
+        content:""; position:absolute; inset:-50%;
+        background: conic-gradient(from 0deg at 50% 50%, transparent 0deg, rgba(199,210,254,0.09) 130deg, transparent 250deg);
+        animation: ecospin 26s linear infinite; pointer-events:none;
+    }
+    .eco-save > * { position: relative; z-index: 1; }
+    .eco-save-ic {
+        flex: 0 0 auto; width: 58px; height: 58px; border-radius: 16px;
+        display:flex; align-items:center; justify-content:center; font-size: 28px;
+        background: linear-gradient(180deg, rgba(199,210,254,0.22), rgba(110,231,160,0.18));
+        border: 1px solid rgba(220,252,231,0.3);
+    }
+    .eco-save-body { flex: 1 1 auto; min-width: 0; }
+    .eco-save-pill {
+        display:inline-block; font-size:10.5px; font-weight:700; letter-spacing:1.5px;
+        text-transform:uppercase; color:#07291A;
+        background: linear-gradient(90deg,#A7F3D0,#C7D2FE);
+        padding:3px 10px; border-radius:999px; margin-bottom:9px;
+    }
+    .eco-save-body h4 { font-family:'Sora',sans-serif; font-weight:700; font-size:18px;
+                        color:#FFFFFF; margin:0 0 5px; line-height:1.25; }
+    .eco-save-body p { font-size:13.5px; color:#CDEAD9; line-height:1.55; margin:0; }
+    .eco-save-cta {
+        flex: 0 0 auto; display:inline-flex; align-items:center; gap:7px;
+        font-weight:700; font-size:14px; color:#07291A;
+        background: linear-gradient(180deg, #6EE7A0, #22C55E);
+        padding:11px 18px; border-radius:11px; white-space:nowrap;
+        box-shadow: 0 10px 22px -10px rgba(34,197,94,0.8);
+    }
+    @media (max-width: 640px) {
+        .eco-save { flex-direction: column; align-items: flex-start; gap: 14px; padding: 20px; }
+        .eco-save-cta { align-self: stretch; justify-content:center; }
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -306,6 +356,25 @@ st.markdown(
     """,
     unsafe_allow_html=True,
 )
+
+# ── Save & Resume highlight banner (clickable → Save & Resume page) ──────────
+st.markdown(
+    """
+    <a class="eco-save" href="Save_and_Resume" target="_self">
+        <div class="eco-save-ic">💾</div>
+        <div class="eco-save-body">
+            <span class="eco-save-pill">New · Never lose your work</span>
+            <h4>Save &amp; Resume — pick up exactly where you left off</h4>
+            <p>No account, no sign-up. Download a small progress file any time and
+               re-upload it later — on any device — to restore every answer and land
+               back on the exact step you were on. 100% in your browser.</p>
+        </div>
+        <span class="eco-save-cta">See how →</span>
+    </a>
+    """,
+    unsafe_allow_html=True,
+)
+
 st.markdown('<div style="height:8px"></div>', unsafe_allow_html=True)
 # ─────────────────────────────────────────────────────────────────────────────
 # WHY BRSR? — Educational content for new visitors
