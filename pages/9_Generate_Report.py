@@ -54,7 +54,7 @@ sections = {
     "Principle 3 (Employee Wellbeing)":
         st.session_state.get("p3", {}) or st.session_state.get("c_p3", {}),
     "Principles 4 & 5 (Stakeholders & Human Rights)":
-        st.session_state.get("p4_5", {}) or st.session_state.get("c_p45", {}),
+        st.session_state.get("p45", {}) or st.session_state.get("c_p45", {}),
     "Principle 6 (Environment)": st.session_state.get("p6", {}),
     "Principles 7, 8, 9 (Policy, Community, Customers)":
         st.session_state.get("p789", {}),
@@ -130,7 +130,7 @@ if st.button(
             merged["p1"] = st.session_state.get("p1", {}) or st.session_state.get("c_p1", {})
             merged["p2"] = st.session_state.get("p2", {}) or st.session_state.get("c_p2", {})
             merged["p3"] = st.session_state.get("p3", {}) or st.session_state.get("c_p3", {})
-            merged["p4_5"] = st.session_state.get("p4_5", {}) or st.session_state.get("c_p45", {})
+            merged["p4_5"] = st.session_state.get("p45", {}) or st.session_state.get("c_p45", {})
             merged["p6"] = st.session_state.get("p6", {})
             merged["p789"] = st.session_state.get("p789", {})
 

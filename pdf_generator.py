@@ -860,96 +860,389 @@ def render_p3(pdf, data):
 # ─────────────────────────────────────────────────────────────────────────────
 # PRINCIPLES 4 + 5 — STAKEHOLDERS & HUMAN RIGHTS
 # ─────────────────────────────────────────────────────────────────────────────
+def _p45_bank_score(p45):
+    """Replicates calc_bank_score() from pages/6_Principle_4_5.py so the PDF
+    can show the same Bank-Ready Score. Handles both Quick and Full schemas."""
+    def _safe_pct(n, d):
+        try:
+            n, d = float(n or 0), float(d or 0)
+            return round((n / d) * 100, 1) if d > 0 else 0.0
+        except Exception:
+            return 0.0
+
+    score = 0
+    if p45.get("stakeholders_selected"):
+        score += 15
+    if p45.get("engage_freq"):
+        score += 10
+
+    wage_data = p45.get("wage_data", {}) or {}
+    wage_total = sum((v.get("total", 0) or 0) for v in wage_data.values())
+    wage_at_or_above = sum(
+        (v.get("equal", 0) or 0) + (v.get("more", 0) or 0)
+        for v in wage_data.values()
+    )
+    min_wage_ok = (
+        str(p45.get("min_wage", "")).startswith("Yes")
+        or (wage_total > 0 and wage_at_or_above >= wage_total)
+    )
+    if min_wage_ok:
+        score += 20
+
+    if p45.get("focal_point") == "Yes":
+        score += 15
+    if p45.get("hr_in_contracts") == "Yes":
+        score += 10
+
+    total = p45.get("total_workforce", 1) or 1
+    tr_data = p45.get("hr_training_data", {}) or {}
+    full_total = sum((v.get("total_cur", 0) or 0) for v in tr_data.values())
+    full_trained = sum((v.get("trained_cur", 0) or 0) for v in tr_data.values())
+    quick_pct = _safe_pct(p45.get("hr_trained", 0), total)
+    full_pct = _safe_pct(full_trained, full_total) if full_total > 0 else 0
+    tr_pct = max(quick_pct, full_pct)
+    if tr_pct >= 80:
+        score += 20
+    elif tr_pct >= 50:
+        score += 10
+
+    comp_data = p45.get("complaint_data", {}) or {}
+    quick_keys = [k for k in p45 if str(k).startswith("complaint_")]
+    has_complaint_data = bool(comp_data) or bool(quick_keys)
+    child_total = (
+        (p45.get("complaint_child_labour", 0) or 0)
+        + (comp_data.get("child_labour", {}).get("filed_cur", 0) or 0)
+    )
+    forced_total = (
+        (p45.get("complaint_forced_labour", 0) or 0)
+        + (comp_data.get("forced_labour", {}).get("filed_cur", 0) or 0)
+    )
+    if has_complaint_data and child_total == 0 and forced_total == 0:
+        score += 10
+
+    return min(score, 100)
+
+
 def render_p45(pdf, data):
     p45 = data.get("p4_5", {}) or data.get("c_p45", {})
     if not p45:
         return
 
+    def _pct(n, d):
+        try:
+            n, d = float(n or 0), float(d or 0)
+            return round((n / d) * 100, 1) if d > 0 else 0.0
+        except Exception:
+            return 0.0
+
+    # Which mode did the user fill? They share the same dict, so we render
+    # whichever data is present, preferring Full-mode detail when available.
+    stakeholder_full = p45.get("stakeholder_full", {}) or {}
+    wage_data = p45.get("wage_data", {}) or {}
+    tr_data = p45.get("hr_training_data", {}) or {}
+    comp_data = p45.get("complaint_data", {}) or {}
+    assess_data = p45.get("assess_data", {}) or {}
+
+    _SH_LABELS = {
+        "workers": "Workers / Employees",
+        "customers": "Customers / Buyers",
+        "suppliers": "Suppliers / Vendors",
+        "community": "Local Community",
+        "banks": "Banks / Lenders",
+        "govt": "Government / Regulators",
+    }
+
+    # ══════════════════════════ PRINCIPLE 4 ══════════════════════════
     pdf.add_page()
     pdf.principle_heading("PRINCIPLE 4", "Stakeholder Engagement")
 
-    # P4 — Stakeholder identification
     pdf.sub_heading("1. Stakeholders Identified")
-    stakeholders = p45.get("stakeholders", [])
-    if stakeholders:
+    if stakeholder_full:
+        # Full mode — engagement table.
+        cols = ["Stakeholder Group", "Vulnerable?", "Frequency", "Channels"]
+        widths = [55, 28, 30, 69]
+        pdf.table_header(cols, widths)
+        for i, (key, row) in enumerate(stakeholder_full.items()):
+            pdf.table_row([
+                row.get("label", _SH_LABELS.get(key, key)),
+                row.get("vuln", "No"),
+                row.get("freq", "-"),
+                ", ".join(row.get("channels", [])) or "-",
+            ], widths, shaded=(i % 2 == 0))
+        pdf.ln(1)
+        for key, row in stakeholder_full.items():
+            if row.get("purpose"):
+                pdf.kv_row(
+                    f"{row.get('label', _SH_LABELS.get(key, key))} — Topics",
+                    row.get("purpose", "-"))
+        if p45.get("identification_process"):
+            pdf.ln(1)
+            pdf.sub_heading("How Stakeholders Are Identified")
+            pdf.paragraph(p45.get("identification_process", "-"))
+    elif p45.get("stakeholders_selected"):
+        # Quick mode — selected groups + engagement frequency.
+        selected = p45.get("stakeholders_selected", [])
+        engage = p45.get("engage_data", {}) or {}
+        names = [_SH_LABELS.get(k, k) for k in selected]
+        if p45.get("stakeholders_other"):
+            names.append(p45.get("stakeholders_other"))
         pdf.kv_row("Key Stakeholder Groups",
-                   ", ".join(stakeholders), shaded=True)
+                   ", ".join(names) if names else "-", shaded=True)
+        if engage:
+            pdf.ln(1)
+            cols = ["Stakeholder Group", "Engagement Frequency"]
+            widths = [90, 92]
+            pdf.table_header(cols, widths)
+            for i, k in enumerate(selected):
+                pdf.table_row([_SH_LABELS.get(k, k),
+                               engage.get(k, "-")],
+                              widths, shaded=(i % 2 == 0))
+            pdf.ln(1)
     else:
         pdf.info_label("No stakeholders documented.")
 
-    pdf.kv_row("Formal Stakeholder Engagement Process?",
-               p45.get("engagement_process", "-"))
-    pdf.kv_row("Engagement Frequency",
-               p45.get("engagement_frequency", "-"), shaded=True)
+    # Concerns raised (Quick) / Board consultation (Full)
+    if p45.get("issues_raised"):
+        pdf.ln(1)
+        pdf.sub_heading("2. Concerns Raised This Year")
+        pdf.kv_row("Status", p45.get("issues_raised", "-"), shaded=True)
+        if p45.get("issues_desc"):
+            pdf.kv_row("Details", p45.get("issues_desc", "-"))
 
-    # Channels
-    channels = p45.get("engagement_channels", [])
-    if channels:
-        pdf.kv_row("Engagement Channels",
-                   ", ".join(channels))
+    if p45.get("board_consultation"):
+        pdf.ln(1)
+        pdf.sub_heading("2. Board / Owner Consultation")
+        pdf.paragraph(p45.get("board_consultation", "-"))
+        pdf.kv_row("Feedback Used to Improve ESG Practices?",
+                   p45.get("vc_consulted_for_esg", "-"), shaded=True)
+        if p45.get("vc_esg_example"):
+            pdf.kv_row("Example", p45.get("vc_esg_example", "-"))
 
-    # P4 Leadership — vulnerable groups
-    pdf.ln(2)
-    pdf.sub_heading("2. Vulnerable / Marginalized Stakeholders")
-    pdf.kv_row("Special Engagement for Vulnerable Groups?",
-               p45.get("vulnerable_engagement", "-"), shaded=True)
-    if p45.get("vulnerable_details"):
-        pdf.kv_row("How Engaged",
-                   p45.get("vulnerable_details", "-"))
+    # P4 Leadership indicators (Full mode only)
+    if any(p45.get(k) for k in
+           ("p4_l1_desc", "p4_l2_used", "p4_l3_vulnerable")):
+        pdf.ln(1)
+        pdf.sub_heading("Leadership Indicators (P4)")
+        if p45.get("p4_l1_desc"):
+            pdf.kv_row("Stakeholder Consultation Process",
+                       p45.get("p4_l1_desc", "-"), shaded=True)
+        if p45.get("p4_l2_used"):
+            pdf.kv_row("Consultation Used to Manage ESG Risk?",
+                       p45.get("p4_l2_used", "-"))
+            if p45.get("p4_l2_example"):
+                pdf.kv_row("Example", p45.get("p4_l2_example", "-"), shaded=True)
+        if p45.get("p4_l3_vulnerable"):
+            pdf.kv_row("Actions for Vulnerable Groups",
+                       p45.get("p4_l3_vulnerable", "-"))
 
-    # P5 — Human Rights
+    # ══════════════════════════ PRINCIPLE 5 ══════════════════════════
     pdf.add_page()
     pdf.principle_heading("PRINCIPLE 5", "Human Rights")
 
+    # 1. Human Rights Training
     pdf.sub_heading("1. Human Rights Training")
-    pdf.kv_row("Training on Human Rights Conducted?",
-               p45.get("hr_training", "-"), shaded=True)
-    pdf.kv_row("% Employees Covered",
-               f"{p45.get('hr_training_pct', 0)}%")
-    pdf.kv_row("% Workers Covered",
-               f"{p45.get('hr_training_wkr_pct', 0)}%", shaded=True)
+    if tr_data:
+        cols = ["Category", "Total", "Trained", "% Covered"]
+        widths = [70, 37, 37, 38]
+        pdf.table_header(cols, widths)
+        tr_labels = {
+            "perm_emp": "Permanent Employees",
+            "contract_emp": "Contract Employees",
+            "perm_wkr": "Permanent Workers",
+            "contract_wkr": "Contract Workers",
+        }
+        for i, (tkey, tlabel) in enumerate(tr_labels.items()):
+            td = tr_data.get(tkey, {})
+            tot = td.get("total_cur", 0) or 0
+            trn = td.get("trained_cur", 0) or 0
+            pdf.table_row([tlabel, str(tot), str(trn),
+                           f"{_pct(trn, tot)}%"],
+                          widths, shaded=(i % 2 == 0))
+        pdf.ln(1)
+    elif p45.get("total_workforce") or p45.get("hr_trained"):
+        total = p45.get("total_workforce", 0) or 0
+        trained = p45.get("hr_trained", 0) or 0
+        pdf.kv_row("Total Workforce", str(total), shaded=True)
+        pdf.kv_row("People Trained on Rights / Anti-Harassment", str(trained))
+        pdf.kv_row("Training Coverage",
+                   f"{_pct(trained, total)}%", shaded=True)
+    else:
+        pdf.info_label("No training data recorded.")
 
-    # Minimum Wage
+    # 2. Minimum Wage & Equal Pay
     pdf.ln(2)
     pdf.sub_heading("2. Minimum Wage & Equal Pay")
-    pdf.kv_row("All Paid Minimum Wage or Above?",
-               p45.get("min_wage_all", "-"), shaded=True)
-    pdf.kv_row("Male-Female Median Remuneration Ratio",
-               p45.get("gender_pay_ratio", "-"))
-    pdf.kv_row("Equal Pay for Equal Work Policy?",
-               p45.get("equal_pay_policy", "-"), shaded=True)
+    if wage_data:
+        wage_labels = {
+            "perm_emp_m": "Permanent Emp - Male",
+            "perm_emp_f": "Permanent Emp - Female",
+            "contract_emp_m": "Contract Emp - Male",
+            "contract_emp_f": "Contract Emp - Female",
+            "perm_wkr_m": "Permanent Wkr - Male",
+            "perm_wkr_f": "Permanent Wkr - Female",
+            "contract_wkr_m": "Contract Wkr - Male",
+            "contract_wkr_f": "Contract Wkr - Female",
+        }
+        cols = ["Category", "Total", "= Min Wage", "> Min Wage"]
+        widths = [76, 35, 36, 35]
+        pdf.table_header(cols, widths)
+        for i, (wkey, wlabel) in enumerate(wage_labels.items()):
+            wd = wage_data.get(wkey, {})
+            if not wd or (wd.get("total", 0) or 0) == 0:
+                continue
+            pdf.table_row([wlabel,
+                           str(wd.get("total", 0) or 0),
+                           str(wd.get("equal", 0) or 0),
+                           str(wd.get("more", 0) or 0)],
+                          widths, shaded=(i % 2 == 0))
+        pdf.ln(1)
+        mm = p45.get("median_male", 0) or 0
+        mf = p45.get("median_female", 0) or 0
+        if mm or mf:
+            pdf.kv_row("Median Salary - Male (Rs/month)", str(mm), shaded=True)
+            pdf.kv_row("Median Salary - Female (Rs/month)", str(mf))
+            if mm > 0 and mf > 0:
+                ratio = round(mf / mm, 2) if mm else 0
+                pdf.kv_row("Female : Male Median Ratio",
+                           f"{ratio} : 1", shaded=True)
+    elif p45.get("min_wage"):
+        pdf.kv_row("All Paid Minimum Wage or Above?",
+                   p45.get("min_wage", "-"), shaded=True)
+    else:
+        pdf.info_label("No wage data recorded.")
 
-    # Complaints
+    # 3. Grievance / Focal Point
+    if any(p45.get(k) for k in
+           ("focal_point", "focal_person", "grievance_mechanism",
+            "retaliation_prevention")):
+        pdf.ln(2)
+        pdf.sub_heading("3. Grievance Mechanism & Focal Point")
+        pdf.kv_row("Designated Focal Point for HR Issues?",
+                   p45.get("focal_point", "-"), shaded=True)
+        if p45.get("focal_person"):
+            pdf.kv_row("Focal Person", p45.get("focal_person", "-"))
+        if p45.get("grievance_mechanism"):
+            pdf.kv_row("Internal Grievance Mechanism",
+                       p45.get("grievance_mechanism", "-"), shaded=True)
+        if p45.get("retaliation_prevention"):
+            pdf.kv_row("Retaliation Prevention",
+                       p45.get("retaliation_prevention", "-"))
+
+    # 4. Complaints
     pdf.ln(2)
-    pdf.sub_heading("3. Human Rights Complaints in FY")
-    cols = ["Category", "Received", "Resolved", "Pending"]
-    widths = [80, 35, 35, 32]
-    pdf.table_header(cols, widths)
-    hr_categories = [
-        ("Sexual Harassment", "sh_received", "sh_resolved", "sh_pending"),
-        ("Discrimination", "disc_received", "disc_resolved", "disc_pending"),
-        ("Child Labour", "child_received", "child_resolved", "child_pending"),
-        ("Forced Labour", "forced_received", "forced_resolved",
-         "forced_pending"),
-        ("Wages Issues", "wage_received", "wage_resolved", "wage_pending"),
+    pdf.sub_heading("4. Human Rights Complaints in FY")
+    if comp_data:
+        cols = ["Category", "Filed (Cur)", "Pending (Cur)",
+                "Filed (Prev)", "Pending (Prev)"]
+        widths = [62, 30, 32, 30, 28]
+        pdf.table_header(cols, widths)
+        comp_labels = {
+            "sexual_harassment": "Sexual Harassment",
+            "discrimination": "Discrimination",
+            "child_labour": "Child Labour",
+            "forced_labour": "Forced Labour",
+            "wages": "Wage Disputes",
+            "other_hr": "Other HR Issues",
+        }
+        for i, (ckey, clabel) in enumerate(comp_labels.items()):
+            cd = comp_data.get(ckey, {})
+            pdf.table_row([clabel,
+                           str(cd.get("filed_cur", 0) or 0),
+                           str(cd.get("pending_cur", 0) or 0),
+                           str(cd.get("filed_prev", 0) or 0),
+                           str(cd.get("pending_prev", 0) or 0)],
+                          widths, shaded=(i % 2 == 0))
+        pdf.ln(1)
+    else:
+        cols = ["Category", "Complaints Filed This Year"]
+        widths = [110, 72]
+        pdf.table_header(cols, widths)
+        quick_comp = [
+            ("Sexual Harassment", "complaint_sexual_harassment"),
+            ("Discrimination", "complaint_discrimination"),
+            ("Child Labour", "complaint_child_labour"),
+            ("Forced Labour", "complaint_forced_labour"),
+            ("Wage Disputes", "complaint_wage_disputes"),
+            ("Other HR Issues", "complaint_other_hr"),
+        ]
+        for i, (clabel, ckey) in enumerate(quick_comp):
+            pdf.table_row([clabel, str(p45.get(ckey, 0) or 0)],
+                          widths, shaded=(i % 2 == 0))
+        pdf.ln(1)
+        if p45.get("complaints_desc"):
+            pdf.kv_row("How Complaints Were Handled",
+                       p45.get("complaints_desc", "-"))
+
+    # HR clauses in contracts
+    if p45.get("hr_in_contracts"):
+        pdf.kv_row("Human Rights Clauses in Supplier Contracts?",
+                   p45.get("hr_in_contracts", "-"), shaded=True)
+
+    # 5. Assessments
+    pdf.ln(2)
+    pdf.sub_heading("5. % of Locations Assessed")
+    assess_labels = [
+        ("child_labour", "child_labour_assess", "Child Labour"),
+        ("forced_labour", "forced_labour_assess", "Forced Labour"),
+        ("sexual_harass", "sexual_harass_assess", "Sexual Harassment"),
+        ("discrimination", "discrimination_assess", "Discrimination"),
+        ("wages", "wages_assess", "Wages Compliance"),
     ]
-    for i, (label, rk, ok, pk) in enumerate(hr_categories):
-        pdf.table_row([label,
-                       str(p45.get(rk, 0) or 0),
-                       str(p45.get(ok, 0) or 0),
-                       str(p45.get(pk, 0) or 0)],
-                      widths, shaded=(i % 2 == 0))
-    pdf.ln(2)
+    any_assess = bool(assess_data) or any(
+        p45.get(qk) for _, qk, _ in assess_labels)
+    if any_assess:
+        cols = ["Assessment Type", "% of Locations Assessed"]
+        widths = [110, 72]
+        pdf.table_header(cols, widths)
+        for i, (fkey, qkey, alabel) in enumerate(assess_labels):
+            val = assess_data.get(fkey, p45.get(qkey, 0)) or 0
+            pdf.table_row([alabel, f"{val}%"],
+                          widths, shaded=(i % 2 == 0))
+        pdf.ln(1)
+    else:
+        pdf.info_label("No assessments recorded.")
 
-    # POSH
-    pdf.sub_heading("4. POSH (Prevention of Sexual Harassment)")
-    pdf.kv_row("POSH Committee Formed?",
-               p45.get("posh_committee", "-"), shaded=True)
-    pdf.kv_row("POSH Policy Displayed?",
-               p45.get("posh_display", "-"))
+    # 6. Corrective actions
+    corrective = p45.get("p5_corrective") or p45.get("corrective_actions")
+    if corrective:
+        pdf.ln(1)
+        pdf.sub_heading("6. Corrective Actions")
+        pdf.paragraph(corrective)
 
-    # Score
-    score = p45.get("score", 0)
+    # 7. P5 Leadership indicators (Full mode only)
+    if any(p45.get(k) for k in
+           ("p5_l1_changes", "p5_l2_scope", "p5_l3_accessible",
+            "vc_corrective")) or (p45.get("vc_assess_data")):
+        pdf.ln(1)
+        pdf.sub_heading("Leadership Indicators (P5)")
+        if p45.get("p5_l1_changes"):
+            pdf.kv_row("Process Changes from HR Grievances",
+                       p45.get("p5_l1_changes", "-"), shaded=True)
+        if p45.get("p5_l2_scope"):
+            pdf.kv_row("HR Due Diligence Scope",
+                       p45.get("p5_l2_scope", "-"))
+        if p45.get("p5_l3_accessible"):
+            pdf.kv_row("Premises Accessible to Differently Abled?",
+                       p45.get("p5_l3_accessible", "-"), shaded=True)
+            if p45.get("p5_l3_steps"):
+                pdf.kv_row("Steps Being Taken",
+                           p45.get("p5_l3_steps", "-"))
+        vc_assess = p45.get("vc_assess_data", {}) or {}
+        if vc_assess:
+            pdf.kv_row("Suppliers Assessed (Sexual Harassment)",
+                       f"{vc_assess.get('sexual_harass', 0)}%")
+            pdf.kv_row("Suppliers Assessed (Child Labour)",
+                       f"{vc_assess.get('child_labour', 0)}%", shaded=True)
+            pdf.kv_row("Suppliers Assessed (Forced Labour)",
+                       f"{vc_assess.get('forced_labour', 0)}%")
+            pdf.kv_row("Suppliers Assessed (Wages)",
+                       f"{vc_assess.get('wages', 0)}%", shaded=True)
+        if p45.get("vc_corrective"):
+            pdf.kv_row("Supplier Corrective Actions",
+                       p45.get("vc_corrective", "-"))
+
+    # Score — computed the same way the page shows it (Bank-Ready Score).
+    score = p45.get("score") or _p45_bank_score(p45)
     if score:
         pdf.ln(3)
         pdf.sub_heading("Principle 4+5 Score")
