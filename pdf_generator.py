@@ -1271,6 +1271,7 @@ def render_p6(pdf, data):
     elec_prev = p6.get("electricity_kwh_prev", 0) or 0
     diesel_cur = p6.get("diesel_litres_yr", 0) or 0
     diesel_prev = p6.get("diesel_litres_prev", 0) or 0
+    petrol_cur = p6.get("petrol_litres_yr", 0) or 0
     other_cur = p6.get("other_energy_kwh", 0) or 0
     total_gj = p6.get("total_energy_gj", 0) or 0
     turnover_rs = p6.get("turnover_rs", 0) or 0
@@ -1281,6 +1282,8 @@ def render_p6(pdf, data):
          f"{elec_cur:,.0f}", f"{elec_prev:,.0f}", "kWh"),
         ("Total Fuel Consumption (Diesel)",
          f"{diesel_cur:,}", f"{diesel_prev:,}", "Litres"),
+        ("Total Fuel Consumption (Petrol)",
+         f"{petrol_cur:,}", "-", "Litres"),
         ("Energy from Other Sources (Solar/Biogas)",
          f"{other_cur:,.0f}", "-", "kWh"),
         ("Total Energy Consumption",
@@ -2068,11 +2071,14 @@ def render_methodology(pdf, data):
         ["Diesel (Scope 1)", "2.68 kg CO2/litre",
          "IPCC / GHG Protocol stationary combustion"], widths)
     pdf.table_row(
+        ["Petrol (Scope 1)", "2.31 kg CO2/litre",
+         "IPCC / GHG Protocol mobile combustion"], widths, True)
+    pdf.table_row(
         ["LPG (Scope 1)", "2.98 kg CO2/kg",
-         "IPCC / GHG Protocol stationary combustion"], widths, True)
+         "IPCC / GHG Protocol stationary combustion"], widths)
     pdf.table_row(
         ["Diesel energy content", "9.9 kWh/litre",
-         "Energy-equivalence conversion"], widths)
+         "Energy-equivalence conversion"], widths, True)
     pdf.ln(2)
 
     pdf.sub_heading("Estimation assumptions (used only where actual data was not entered)")

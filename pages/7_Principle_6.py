@@ -20,6 +20,9 @@ KWH_TO_MJ = 3.6
 KWH_TO_GJ = 0.0036
 DIESEL_KWH_PER_LITRE = 9.9
 DIESEL_CO2_PER_LITRE = 2.68
+PETROL_CO2_PER_LITRE = 2.31   # kg CO2/L motor gasoline (vs diesel 2.68) — IPCC 2006 EF x NCV; used for petrol only
+PETROL_KWH_PER_LITRE = 9.1    # ~32.8 MJ/L NCV (IPCC 2006 motor gasoline 44.3 MJ/kg x ~0.74 kg/L) / 3.6
+LPG_KWH_PER_KG = 13.14        # 47.3 MJ/kg NCV (IPCC 2006 LPG) / 3.6
 GRID_CO2_PER_KWH = 0.71  # CEA CO2 Baseline Database V21.0 (Nov 2025), weighted avg incl. RES & captive, FY 2024-25
 TANKER_LITRES = 5000
 LITRES_TO_KL = 0.001
@@ -61,9 +64,6 @@ def intensity(value, turnover):
         return round(value / turnover, 8)
     return None
 
-def estimate_prev_year(current_value, pct_change=10):
-    return round(current_value * (1 - pct_change/100), 2)
-
 def money_saved_from_reduction(current_kwh, target_pct_reduction):
     saved_kwh = current_kwh * (target_pct_reduction / 100)
     return round(saved_kwh * ELECTRICITY_RATE_PER_UNIT, 2)
@@ -71,6 +71,84 @@ def money_saved_from_reduction(current_kwh, target_pct_reduction):
 def estimate_water_from_workers(workers, working_days):
     """Standard MSME estimation: workers × 40 litres × days ÷ 1000 = kL/year"""
     return round((workers * LITRES_PER_PERSON_PER_DAY * working_days) / 1000, 2)
+
+# ─────────────────────────────────────────────────────────────────────────────
+# SINGLE SOURCE OF TRUTH FOR PRINCIPLE 6 DERIVED METRICS
+# ─────────────────────────────────────────────────────────────────────────────
+def compute_p6_metrics(p6):
+    """Compute every derived Principle 6 metric from the raw inputs the user
+    entered (the same input keys exist in Quick and Full mode). Returning one
+    consistent result set means a given facility always produces ONE Scope 1,
+    ONE total energy, and ONE set of intensities regardless of which mode the
+    user filled or the order they navigated (fixes B-03/B-04/B-06/B-11).
+
+    Pure function — reads only, no Streamlit, no writes. Use apply_p6_metrics()
+    to persist the result back into the p6 dict.
+    """
+    def _n(key):
+        try:
+            return float(p6.get(key, 0) or 0)
+        except (TypeError, ValueError):
+            return 0.0
+
+    elec_kwh  = _n("electricity_kwh_yr")
+    diesel_l  = _n("diesel_litres_yr")
+    petrol_l  = _n("petrol_litres_yr")
+    lpg_kg    = _n("lpg_kg_yr")
+    other_kwh = _n("other_energy_kwh")
+    turnover  = _n("turnover_rs")
+
+    # Scope 1 — direct combustion, each fuel at its OWN emission factor
+    s1_diesel = (diesel_l * DIESEL_CO2_PER_LITRE) / 1000.0
+    s1_petrol = (petrol_l * PETROL_CO2_PER_LITRE) / 1000.0
+    s1_lpg    = (lpg_kg   * LPG_CO2_PER_KG)       / 1000.0
+    scope1 = round(s1_diesel + s1_petrol + s1_lpg, 4)
+
+    # Scope 2 — purchased grid electricity
+    scope2 = round((elec_kwh * GRID_CO2_PER_KWH) / 1000.0, 4)
+    scope12 = round(scope1 + scope2, 4)
+
+    # Total energy (GJ) — electricity + ALL fuels (energy-equivalent) + other
+    total_kwh = (
+        elec_kwh
+        + diesel_l * DIESEL_KWH_PER_LITRE
+        + petrol_l * PETROL_KWH_PER_LITRE
+        + lpg_kg   * LPG_KWH_PER_KG
+        + other_kwh
+    )
+    total_gj = round(total_kwh * KWH_TO_GJ, 4)
+
+    # Waste — unify to metric tonnes from whichever mode filled it
+    waste_mt = _n("total_waste_mt")
+    if waste_mt == 0:
+        waste_mt = round(_n("total_waste_kg_yr") / 1000.0, 4)
+
+    # Intensities (per rupee of turnover)
+    e_int     = round(total_gj / turnover, 8)  if turnover > 0 else None
+    em_int    = round(scope12 / turnover, 10)  if turnover > 0 else None
+    water_int = round(_n("water_kl_yr") / turnover, 8) if turnover > 0 else None
+
+    return {
+        "scope1_diesel_co2": round(s1_diesel, 4),
+        "scope1_petrol_co2": round(s1_petrol, 4),
+        "scope1_lpg_co2": round(s1_lpg, 4),
+        "scope1_co2": scope1,
+        "scope2_co2": scope2,
+        "scope12_co2": scope12,
+        "total_energy_kwh": round(total_kwh, 2),
+        "total_energy_gj": total_gj,
+        "energy_intensity": e_int,
+        "emission_intensity": em_int,
+        "water_intensity": water_int,
+        "total_waste_mt": waste_mt,
+    }
+
+
+def apply_p6_metrics(p6):
+    """Compute derived metrics and persist them into p6. Call this whenever a
+    raw input may have changed so summary/PDF always read consistent values."""
+    p6.update(compute_p6_metrics(p6))
+    return p6
 
 # ─────────────────────────────────────────────────────────────────────────────
 # CSS
@@ -498,13 +576,19 @@ if st.session_state.p6_mode == "quick":
 
         # Track each source separately so we can sum them into total Scope 1
         scope1_diesel = 0.0
+        scope1_petrol = 0.0
         scope1_lpg = 0.0
 
-        # ── DIESEL INPUT (only shown if user picked it) ──────────────────────
+        # ── DIESEL / PETROL INPUT (only shown if user picked it) ─────────────
         if "Diesel / Petrol (generator or vehicle)" in fuel_sources:
-            st.markdown("**⛽ Diesel / Petrol usage**")
+            st.markdown("**⛽ Diesel & Petrol usage**")
+            st.caption(
+                "Enter diesel and petrol separately — they have different CO₂ "
+                f"factors (diesel {DIESEL_CO2_PER_LITRE}, petrol {PETROL_CO2_PER_LITRE} "
+                "kg/L), so combining them would misstate your Scope 1."
+            )
             diesel_monthly = st.number_input(
-                "Approximately how many litres of diesel/petrol per month?",
+                "Litres of DIESEL per month?",
                 min_value=0,
                 value=p6.get("diesel_monthly", 0),
                 help="Check fuel receipts or estimate from generator running hours.",
@@ -514,24 +598,39 @@ if st.session_state.p6_mode == "quick":
             diesel_yearly = diesel_monthly * 12
             p6["diesel_litres_yr"] = diesel_yearly
             scope1_diesel = diesel_to_co2_tonnes(diesel_yearly)
-            fuel_cost = diesel_yearly * 90
 
-            if diesel_yearly > 0:
+            petrol_monthly = st.number_input(
+                "Litres of PETROL per month?",
+                min_value=0,
+                value=p6.get("petrol_monthly", 0),
+                help="Petrol for vehicles or small engines. Leave 0 if none.",
+                key="q2_petrol_monthly",
+            )
+            p6["petrol_monthly"] = petrol_monthly
+            petrol_yearly = petrol_monthly * 12
+            p6["petrol_litres_yr"] = petrol_yearly
+            scope1_petrol = round((petrol_yearly * PETROL_CO2_PER_LITRE) / 1000, 4)
+
+            fuel_cost = diesel_yearly * 90 + petrol_yearly * 100
+
+            if diesel_yearly > 0 or petrol_yearly > 0:
                 calc(
-                    f"Yearly diesel: {diesel_yearly:,} litres | "
-                    f"Diesel Scope 1: {scope1_diesel:.3f} tonnes CO₂"
+                    f"Yearly diesel: {diesel_yearly:,} L → {scope1_diesel:.3f} tCO₂  ·  "
+                    f"Yearly petrol: {petrol_yearly:,} L → {scope1_petrol:.3f} tCO₂"
                 )
-                money("Annual diesel cost estimate", fuel_cost)
+                money("Annual fuel cost estimate", fuel_cost)
 
-                if scope1_diesel > 5:
+                if scope1_diesel + scope1_petrol > 5:
                     warn(
-                        f"High diesel emissions ({scope1_diesel:.1f} tonnes CO₂). "
+                        f"High fuel emissions ({scope1_diesel + scope1_petrol:.1f} tonnes CO₂). "
                         "Consider reducing generator hours or switching to solar."
                     )
         else:
-            # User unchecked diesel - clear stored values to avoid stale data
+            # User unchecked - clear stored values to avoid stale data
             p6["diesel_monthly"] = 0
             p6["diesel_litres_yr"] = 0
+            p6["petrol_monthly"] = 0
+            p6["petrol_litres_yr"] = 0
 
         # ── LPG INPUT (only shown if user picked it) ─────────────────────────
         if "LPG / PNG (cooking, heating, ovens)" in fuel_sources:
@@ -557,10 +656,11 @@ if st.session_state.p6_mode == "quick":
             p6["lpg_kg_yr"] = 0
 
         # ── SUM SCOPE 1 FROM ALL SELECTED SOURCES ────────────────────────────
-        total_scope1 = round(scope1_diesel + scope1_lpg, 4)
+        total_scope1 = round(scope1_diesel + scope1_petrol + scope1_lpg, 4)
         p6["scope1_co2"] = total_scope1
         # Keep breakdowns available for the report
         p6["scope1_diesel_co2"] = scope1_diesel
+        p6["scope1_petrol_co2"] = scope1_petrol
         p6["scope1_lpg_co2"] = scope1_lpg
 
         # ── DISPLAY TOTAL SCOPE 1 ────────────────────────────────────────────
@@ -576,11 +676,15 @@ if st.session_state.p6_mode == "quick":
                 f"🌍 **Total Scope 1 emissions** (from all selected fuel sources): "
                 f"**{total_scope1:.2f} tonnes CO₂** per year"
             )
-            if scope1_diesel > 0 and scope1_lpg > 0:
-                st.caption(
-                    f"Breakdown — Diesel: {scope1_diesel:.3f} tCO₂  ·  "
-                    f"LPG: {scope1_lpg:.3f} tCO₂"
-                )
+            parts = []
+            if scope1_diesel > 0:
+                parts.append(f"Diesel: {scope1_diesel:.3f} tCO₂")
+            if scope1_petrol > 0:
+                parts.append(f"Petrol: {scope1_petrol:.3f} tCO₂")
+            if scope1_lpg > 0:
+                parts.append(f"LPG: {scope1_lpg:.3f} tCO₂")
+            if len(parts) > 1:
+                st.caption("Breakdown — " + "  ·  ".join(parts))
 
         c_back, c_next = st.columns(2)
         with c_back:
@@ -1152,16 +1256,13 @@ If Yes to #1 and #3, and No to #2 — you are likely compliant.
         p6["turnover_rs"] = turnover_lakhs * 100000
 
         if turnover_lakhs > 0:
-            elec = p6.get("electricity_kwh_yr", 0)
-            water = p6.get("water_kl_yr", 0)
-            elec_gj = kwh_to_gj(elec)
-            turnover_rs = p6["turnover_rs"]
-
-            e_intensity = intensity(elec_gj, turnover_rs)
-            w_intensity = intensity(water, turnover_rs)
-
-            p6["energy_intensity"] = e_intensity
-            p6["water_intensity"] = w_intensity
+            # Single source of truth — energy intensity is now based on TOTAL
+            # energy (electricity + all fuels), not electricity alone, and this
+            # also populates total_energy_gj / scope / emission_intensity /
+            # total_waste_mt so the summary and PDF read consistent values.
+            m = apply_p6_metrics(p6)
+            e_intensity = m["energy_intensity"]
+            w_intensity = m["water_intensity"]
 
             if e_intensity:
                 calc(
@@ -1384,6 +1485,19 @@ else:
                     diesel_gj = round(diesel_cur * DIESEL_KWH_PER_LITRE * KWH_TO_GJ, 4)
                     st.caption(f"Diesel energy: {diesel_gj:.3f} GJ")
 
+                petrol_cur = st.number_input(
+                    "Total petrol used this year (litres)",
+                    min_value=0,
+                    value=p6.get("petrol_litres_yr", 0),
+                    key="f_petrol_cur",
+                    help=f"Petrol is counted at {PETROL_CO2_PER_LITRE} kg CO₂/L, "
+                         f"separate from diesel ({DIESEL_CO2_PER_LITRE} kg/L)."
+                )
+                p6["petrol_litres_yr"] = petrol_cur
+                if petrol_cur > 0:
+                    petrol_gj = round(petrol_cur * PETROL_KWH_PER_LITRE * KWH_TO_GJ, 4)
+                    st.caption(f"Petrol energy: {petrol_gj:.3f} GJ")
+
             with c2:
                 st.markdown("**Previous Financial Year**")
                 monthly_bill_prev = st.number_input(
@@ -1392,13 +1506,14 @@ else:
                     value=p6.get("monthly_bill_prev", 0),
                     key="f_bill_prev"
                 )
+                p6["monthly_bill_prev"] = monthly_bill_prev
                 if monthly_bill_prev == 0 and monthly_bill_cur > 0:
-                    if st.button("📊 Estimate from Current Year"):
-                        p6["monthly_bill_prev"] = int(
-                            monthly_bill_cur * 0.9
-                        )
-                        st.rerun()
-                    st.caption("Click above to estimate previous year as -10% of current")
+                    st.caption(
+                        "Leave blank if this is your first reporting year or you "
+                        "don't have last year's bill. The report will show previous "
+                        "FY as 'Not available' — we never estimate prior-year "
+                        "figures, as that would put invented data in a statutory report."
+                    )
 
                 if monthly_bill_prev > 0:
                     kwh_prev = estimate_units_from_bill(monthly_bill_prev) * 12
@@ -1438,14 +1553,10 @@ else:
                 p6["other_energy_kwh"] = other_energy
 
         elec = p6.get("electricity_kwh_yr", 0)
-        diesel = p6.get("diesel_litres_yr", 0)
-        other = p6.get("other_energy_kwh", 0)
-        diesel_kwh_eq = diesel * DIESEL_KWH_PER_LITRE
-        total_kwh = elec + diesel_kwh_eq + other
-        total_gj = kwh_to_gj(total_kwh)
-
-        p6["total_energy_kwh"] = total_kwh
-        p6["total_energy_gj"] = total_gj
+        # Single source of truth — total energy now includes ALL fuels (incl. LPG)
+        m = apply_p6_metrics(p6)
+        total_kwh = m["total_energy_kwh"]
+        total_gj = m["total_energy_gj"]
 
         if total_kwh > 0:
             st.markdown("")
@@ -1453,9 +1564,8 @@ else:
             em1, em2, em3 = st.columns(3)
             em1.metric("Total Electricity", f"{elec:,.0f} kWh")
             em2.metric("Total Energy", f"{total_gj:.3f} GJ")
-            turnover = p6.get("turnover_rs", 0)
-            if turnover > 0:
-                e_int = intensity(total_gj, turnover)
+            e_int = m["energy_intensity"]
+            if e_int:
                 em3.metric("Energy Intensity", f"{e_int:.8f} GJ/₹")
 
         with st.container(border=True):
@@ -1595,31 +1705,29 @@ else:
                 "We calculate both automatically from your energy data."
             )
 
-            diesel = p6.get("diesel_litres_yr", 0)
             elec = p6.get("electricity_kwh_yr", 0)
 
-            scope1 = diesel_to_co2_tonnes(diesel)
-            scope2 = electricity_to_co2_tonnes(elec)
-            total_s12 = round(scope1 + scope2, 4)
-
-            p6["scope1_co2"] = scope1
-            p6["scope2_co2"] = scope2
-            p6["scope12_co2"] = total_s12
+            # Single source of truth — Scope 1 now sums ALL fuels (diesel +
+            # petrol + LPG), matching Quick mode instead of overwriting it.
+            m = apply_p6_metrics(p6)
+            scope1 = m["scope1_co2"]
+            scope2 = m["scope2_co2"]
+            total_s12 = m["scope12_co2"]
 
             sc = st.columns(3)
             sc[0].metric("Scope 1 (tCO₂e)", f"{scope1:.4f}")
             sc[1].metric("Scope 2 (tCO₂e)", f"{scope2:.4f}")
             sc[2].metric("Total Scope 1+2", f"{total_s12:.4f}")
 
-            turnover = p6.get("turnover_rs", 0)
-            if turnover > 0:
-                em_int = intensity(total_s12, turnover)
+            em_int = m["emission_intensity"]
+            if em_int:
                 st.caption(
                     f"Emission intensity: {em_int:.10f} tCO₂ per ₹ turnover"
                 )
 
             st.caption(
-                f"Formula: Scope 1 = {diesel} L diesel × {DIESEL_CO2_PER_LITRE} kg/L ÷ 1000 | "
+                f"Formula: Scope 1 = diesel x {DIESEL_CO2_PER_LITRE} + petrol x "
+                f"{PETROL_CO2_PER_LITRE} kg/L + LPG x {LPG_CO2_PER_KG} kg/kg, all / 1000 | "
                 f"Scope 2 = {elec:,.0f} kWh × {GRID_CO2_PER_KWH} kg/kWh ÷ 1000"
             )
 
