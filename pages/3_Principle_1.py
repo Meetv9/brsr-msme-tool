@@ -227,6 +227,7 @@ def calc_p1_score():
 with st.sidebar:
     st.markdown("### ⚖️ P1 Progress")
     score = calc_p1_score()
+    p1["score"] = score
     st.progress(score / 100)
     st.metric("P1 Completion", f"{score}%")
 

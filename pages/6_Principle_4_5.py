@@ -877,6 +877,7 @@ if st.session_state.p45_mode == "quick":
         )
 
         bank_score = calc_bank_score()
+        p["score"] = bank_score
         colour = ("green" if bank_score >= 70
                   else "orange" if bank_score >= 40 else "red")
         st.markdown(
@@ -1648,6 +1649,7 @@ else:
         st.header("✅ P4 & P5 — Full Mode Summary")
 
         bank_score = calc_bank_score()
+        p["score"] = bank_score
         colour = ("green" if bank_score >= 70
                   else "orange" if bank_score >= 40 else "red")
         st.markdown(

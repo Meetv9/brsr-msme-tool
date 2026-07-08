@@ -21,6 +21,8 @@ from fpdf import FPDF
 from datetime import datetime
 from pathlib import Path
 
+from scoring import strict_overall
+
 _PDF_BASE_DIR = Path(__file__).parent
 ECOSETU_LOGO = str(_PDF_BASE_DIR / "assets" / "ecosetu_logo.png")
 ECOSETU_ICON = str(_PDF_BASE_DIR / "assets" / "ecosetu_icon_128.png")
@@ -2239,6 +2241,23 @@ def render_cover(pdf, d, overall_score):
     pdf.ln(8)
 
     # ── Big score circle/box ──────────────────────────────────────────
+    # The passed-in score is Section A completeness only. The headline number
+    # must reflect the WHOLE report: strict readiness across all 7 BRSR units,
+    # where any unfilled section counts as 0 (see scoring.strict_overall — the
+    # same function Home uses, so the two can never drift). Section A alone is
+    # kept separately for its own row in the section-wise table below.
+    section_a_score = overall_score
+    section_scores = {
+        "section_a": section_a_score,
+        "p1": (d.get("p1") or {}).get("score") or 0,
+        "p2": (d.get("p2") or {}).get("score") or 0,
+        "p3": (d.get("p3") or {}).get("score") or 0,
+        "p45": (d.get("p4_5") or {}).get("score") or 0,
+        "p6": (d.get("p6") or {}).get("score") or 0,
+        "p789": (d.get("p789") or {}).get("score") or 0,
+    }
+    overall_score = strict_overall(section_scores)
+
     pdf.set_font("Helvetica", "", 9)
     pdf.set_text_color(100, 116, 139)
     pdf.cell(0, 5, "OVERALL BRSR READINESS SCORE", align="C", ln=True)
@@ -2292,7 +2311,7 @@ def render_cover(pdf, d, overall_score):
     pdf.cell(widths[1], 7, " Score", border=0, fill=True, ln=True)
 
     # Build score list
-    scores_list = [("Section A — General Disclosures", overall_score)]
+    scores_list = [("Section A — General Disclosures", section_a_score)]
     b = d.get("section_b", {})
     if b:
         scores_list.append(

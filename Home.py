@@ -9,6 +9,7 @@ Streamlit auto-detects the /pages folder and builds the sidebar menu.
 import streamlit as st
 from PIL import Image
 from pathlib import Path
+from scoring import strict_overall, BRSR_SECTION_LABELS
 _BASE_DIR = Path(__file__).parent
 _ecosetu_icon = Image.open(_BASE_DIR / "assets" / "ecosetu_favicon.png")
 from business_profile import (
@@ -609,58 +610,57 @@ st.markdown("---")
 st.markdown("### 🏆 Overall BRSR Readiness Score")
 
 
-def collect_scores():
-    """Gather sub-scores from each principle's session state."""
-    scores = {}
+def collect_section_scores():
+    """All 7 BRSR units -> 0-100 score (0 when a section is unfilled).
 
-    # Section A — ESG score (already calculated)
+    Single source for the strict overall readiness number; the PDF builds the
+    identical dict and both feed scoring.strict_overall, so they never drift.
+    """
     data = st.session_state.get("data", {})
-    if data.get("company_name"):
-        # Rough ESG score based on completeness
-        a_score = 0
-        if data.get("company_name"): a_score += 10
-        if data.get("email"): a_score += 5
-        if data.get("activities"): a_score += 10
-        if data.get("total_perm_emp", 0) > 0: a_score += 15
-        if data.get("has_grievance"): a_score += 15
-        if data.get("issues"): a_score += 15
-        if data.get("board_female", 0) > 0: a_score += 10
-        if data.get("export_pct", 0) > 0: a_score += 10
-        if data.get("products"): a_score += 10
-        scores["Section A"] = min(a_score, 100)
+    a_score = 0
+    if data.get("company_name"): a_score += 10
+    if data.get("email"): a_score += 5
+    if data.get("activities"): a_score += 10
+    if data.get("total_perm_emp", 0) > 0: a_score += 15
+    if data.get("has_grievance"): a_score += 15
+    if data.get("issues"): a_score += 15
+    if data.get("board_female", 0) > 0: a_score += 10
+    if data.get("export_pct", 0) > 0: a_score += 10
+    if data.get("products"): a_score += 10
 
-    # Each principle stores its own score
-    for key, label in [
-        ("p1", "P1"), ("p2", "P2"), ("p3", "P3"),
-        ("p4_5", "P4+5"), ("p6", "P6"), ("p789", "P7+8+9")
-    ]:
-        pdata = st.session_state.get(key, {})
-        if pdata.get("score") is not None and pdata.get("score") != 0:
-            scores[label] = pdata["score"]
-
-    return scores
+    return {
+        "section_a": min(a_score, 100),
+        "p1": st.session_state.get("c_p1", {}).get("score") or 0,
+        "p2": st.session_state.get("c_p2", {}).get("score") or 0,
+        "p3": st.session_state.get("p3", {}).get("score") or 0,
+        "p45": st.session_state.get("p45", {}).get("score") or 0,
+        "p6": st.session_state.get("p6", {}).get("score") or 0,
+        "p789": st.session_state.get("p789", {}).get("score") or 0,
+    }
 
 
-scores = collect_scores()
+section_scores = collect_section_scores()
+overall = strict_overall(section_scores)
 
-if scores:
-    avg_score = round(sum(scores.values()) / len(scores))
-    colour = "#2e7d32" if avg_score >= 70 else "#ef6c00" if avg_score >= 40 else "#c62828"
+if any(section_scores.values()):
+    colour = "#2e7d32" if overall >= 70 else "#ef6c00" if overall >= 40 else "#c62828"
     st.markdown(
         f'<div class="progress-card" style="text-align:center;">'
-        f'<div class="score-big" style="color:{colour};">{avg_score}/100</div>'
+        f'<div class="score-big" style="color:{colour};">{overall}/100</div>'
         f'<div style="color:#666;font-size:14px;">'
-        f'Average across {len(scores)} completed section(s)</div>'
+        f'Overall readiness across all 7 BRSR sections '
+        f'&mdash; unfilled sections count as 0</div>'
         f'</div>',
         unsafe_allow_html=True
     )
 
-    # Individual scores
+    # Individual scores — all 7 units, so the breakdown reconciles with the
+    # strict overall above (a 0 row shows exactly what's dragging it down).
     st.markdown("**Section-wise scores:**")
-    cols = st.columns(min(len(scores), 4))
-    for i, (label, val) in enumerate(scores.items()):
-        with cols[i % len(cols)]:
-            st.metric(label, f"{val}/100")
+    cols = st.columns(4)
+    for i, (key, label) in enumerate(BRSR_SECTION_LABELS):
+        with cols[i % 4]:
+            st.metric(label, f"{section_scores[key]}/100")
 else:
     st.info(
         "📝 Start filling Section A using the sidebar to see your score."

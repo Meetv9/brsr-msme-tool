@@ -224,6 +224,7 @@ def calc_p2_score():
 with st.sidebar:
     st.markdown("### ♻️ P2 Progress")
     score = calc_p2_score()
+    p2["score"] = score
     st.progress(score / 100)
     st.metric("P2 Completion", f"{score}%")
     if score < 40:

@@ -1319,6 +1319,7 @@ If Yes to #1 and #3, and No to #2 — you are likely compliant.
         )
 
         score = calc_p6_score()
+        p6["score"] = score
         colour = ("green" if score >= 70
                   else "orange" if score >= 40 else "red")
         st.markdown(
@@ -2279,6 +2280,7 @@ else:
         st.header("✅ Principle 6 — Full Mode Summary")
 
         score = calc_p6_score()
+        p6["score"] = score
         colour = ("green" if score >= 70
                   else "orange" if score >= 40 else "red")
         st.markdown(

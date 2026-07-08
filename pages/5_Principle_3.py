@@ -995,6 +995,7 @@ if st.session_state.p3_mode == "quick":
         )
 
         bank_score = calc_bank_score()
+        p3["score"] = bank_score
         total = p3.get("total_workforce", 0)
 
         # Score display
@@ -1816,6 +1817,7 @@ else:
         st.header("✅ Principle 3 — Full Mode Summary")
 
         bank_score = calc_bank_score()
+        p3["score"] = bank_score
         total = p3.get("total_workforce", 0)
 
         colour = ("green" if bank_score >= 70
