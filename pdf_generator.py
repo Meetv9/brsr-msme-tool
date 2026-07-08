@@ -1520,7 +1520,8 @@ def render_p6(pdf, data):
 
     # ── Leadership Indicators ─────────────────────────────────────────────
     if (p6.get("renewable_kwh") or p6.get("water_discharge_kl") or
-            p6.get("initiatives") or p6.get("disaster_plan") not in [None, "No"]):
+            p6.get("initiatives") or p6.get("disaster_plan") not in [None, "No"] or
+            p6.get("green_credits_participate") == "Yes"):
         pdf.add_page()
         pdf.sub_heading("LEADERSHIP INDICATORS (Voluntary)")
 
@@ -1599,6 +1600,18 @@ def render_p6(pdf, data):
                        f"{vc_pct}%", shaded=True)
             if p6.get("vc_env_actions"):
                 pdf.kv_row("Corrective Actions", p6.get("vc_env_actions", "-"))
+            pdf.ln(2)
+
+        # L8: Green Credits (Green Credit Programme, per SEBI 2025 BRSR update)
+        if p6.get("green_credits_participate") == "Yes":
+            gc_gen = p6.get("green_credits_generated", 0) or 0
+            gc_proc = p6.get("green_credits_procured", 0) or 0
+            pdf.sub_heading("L8. Green Credits (Green Credit Programme)")
+            pdf.kv_row("Green Credits generated (number)",
+                       f"{gc_gen:,.0f}", shaded=True)
+            pdf.kv_row("Green Credits procured (number)", f"{gc_proc:,.0f}")
+            if p6.get("green_credits_details"):
+                pdf.kv_row("Details", p6.get("green_credits_details", "-"))
 
     # Score
     score = p6.get("score", 0)

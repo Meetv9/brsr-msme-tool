@@ -2029,7 +2029,8 @@ else:
             "🌍 L4: Scope 3",
             "🌱 L6: Initiatives",
             "🚨 L7: Disaster Plan",
-            "🔗 L9: VC Assessment"
+            "🔗 L9: VC Assessment",
+            "🌿 Green Credits"
         ])
 
         with lt[0]:
@@ -2195,6 +2196,51 @@ else:
                     value=p6.get("vc_env_actions", ""),
                     height=60, key="f_vc_env_act"
                 )
+
+        with lt[7]:
+            badge_l()
+            st.markdown("### Green Credits (Green Credit Programme)")
+            st.caption(
+                "The Green Credit Programme (Green Credit Rules 2023, MoEFCC) "
+                "lets entities earn tradable Green Credits for activities like "
+                "tree plantation, water conservation, and waste management. "
+                "SEBI's 2025 BRSR update adds this as a leadership disclosure. "
+                "Optional — leave as 'No' if you don't participate."
+            )
+            p6["green_credits_participate"] = st.radio(
+                "Do you generate or procure Green Credits?",
+                ["No", "Yes"],
+                horizontal=True,
+                index=0 if p6.get("green_credits_participate", "No") == "No" else 1,
+                key="f_gc_part"
+            )
+            if p6["green_credits_participate"] == "Yes":
+                gcc = st.columns(2)
+                p6["green_credits_generated"] = gcc[0].number_input(
+                    "Green Credits generated (number)",
+                    min_value=0.0,
+                    value=float(p6.get("green_credits_generated", 0.0)),
+                    key="f_gc_gen"
+                )
+                p6["green_credits_procured"] = gcc[1].number_input(
+                    "Green Credits procured (number)",
+                    min_value=0.0,
+                    value=float(p6.get("green_credits_procured", 0.0)),
+                    key="f_gc_proc"
+                )
+                p6["green_credits_details"] = st.text_area(
+                    "Brief details (activity, registration, FY)",
+                    value=p6.get("green_credits_details", ""),
+                    height=60,
+                    placeholder="e.g. 50 Green Credits earned for tree plantation "
+                                "on 2 ha under Green Credit Rules 2023; registered "
+                                "on the GCP portal in FY 2024-25.",
+                    key="f_gc_details"
+                )
+            else:
+                # Not participating — clear counts to avoid stale figures in report
+                p6["green_credits_generated"] = 0.0
+                p6["green_credits_procured"] = 0.0
 
         c_back, _, c_next = st.columns([1, 2, 1])
         with c_back:
