@@ -317,10 +317,10 @@ def render_section_a(pdf, d):
 
     # ── III. BRSR Contact Person ────────────────────────────────────────
     pdf.sub_heading("III. BRSR Contact Person")
-    pdf.kv_row("Name", d.get("brsr_person_name"), shaded=True)
-    pdf.kv_row("Designation", d.get("brsr_person_designation"))
-    pdf.kv_row("Email", d.get("brsr_person_email"), shaded=True)
-    pdf.kv_row("Phone", d.get("brsr_person_phone"))
+    pdf.kv_row("Name", d.get("contact_name"), shaded=True)
+    pdf.kv_row("Designation", d.get("contact_designation"))
+    pdf.kv_row("Email", d.get("contact_email"), shaded=True)
+    pdf.kv_row("Phone", d.get("contact_phone"))
 
     # ── IV. Products/Services ───────────────────────────────────────────
     pdf.sub_heading("IV. Business Activities & Products")
@@ -606,7 +606,7 @@ def render_section_b(pdf, data):
                b.get("gov_committee", "-"), shaded=True)
     pdf.kv_row("Review Frequency", b.get("gov_review_freq", "-"))
     pdf.kv_row("External Assessment",
-               b.get("gov_external_assess", "-"), shaded=True)
+               b.get("gov_external", "-"), shaded=True)
 
     statement = b.get("gov_director_statement", "")
     if statement and str(statement).strip():
@@ -628,10 +628,10 @@ def render_p1(pdf, data):
 
     # Training
     pdf.sub_heading("1. Training & Awareness Programmes")
+    sessions = p1.get("total_training_sessions", 0)
     pdf.kv_row("Training Conducted?",
-               "Yes" if p1.get("training_conducted") == "Yes" else "No",
-               shaded=True)
-    pdf.kv_row("Number of Programmes", p1.get("training_count", 0))
+               "Yes" if sessions > 0 else "No", shaded=True)
+    pdf.kv_row("Number of Sessions", sessions)
     pdf.kv_row("Topics Covered", p1.get("training_topics", "-"), shaded=True)
 
     cols = ["Category", "Trained", "Total", "% Coverage"]
@@ -654,35 +654,56 @@ def render_p1(pdf, data):
 
     # Fines & Penalties
     pdf.sub_heading("2. Fines, Penalties & Regulatory Actions")
-    had_fines = p1.get("had_fines", "No")
-    pdf.kv_row("Any Fines/Penalties in FY?", had_fines, shaded=True)
-    if had_fines == "Yes":
-        pdf.kv_row("Total Fine Amount (Rs.)", p1.get("fine_amount", 0))
-        pdf.kv_row("Brief of Cases", p1.get("fine_brief", "-"), shaded=True)
-        pdf.kv_row("Corrective Action Taken",
-                   p1.get("fine_corrective", "-"))
+    paid_fines = str(p1.get("has_fines", "No")).startswith("Yes")
+    pdf.kv_row("Any Fines/Penalties in FY?",
+               "Yes" if paid_fines else "No", shaded=True)
+    if paid_fines:
+        pdf.kv_row("Total Fine Amount (Rs.)", p1.get("fines_total", 0))
+        fines_list = [f for f in p1.get("fines_list", [])
+                      if f.get("authority") or f.get("brief") or f.get("amount")]
+        if fines_list:
+            cols = ["Authority", "Brief of Case", "Amount (Rs.)", "Appealed?"]
+            widths = [48, 60, 40, 34]
+            pdf.table_header(cols, widths)
+            for i, f in enumerate(fines_list):
+                pdf.table_row([
+                    (str(f.get("authority", "-")) or "-")[:30],
+                    (str(f.get("brief", "-")) or "-")[:38],
+                    str(f.get("amount", 0)),
+                    str(f.get("appeal", "No")),
+                ], widths, shaded=(i % 2 == 0))
+    corrective = p1.get("corrective_action", "")
+    if corrective and str(corrective).strip():
+        pdf.kv_row("Corrective Action Taken?", "Yes", shaded=True)
+        pdf.paragraph(str(corrective))
     pdf.ln(2)
 
     # Anti-Bribery
     pdf.sub_heading("3. Anti-Bribery / Anti-Corruption Policy")
     pdf.kv_row("Policy in place?",
                p1.get("anti_bribery_policy", "-"), shaded=True)
-    pdf.kv_row("Policy Coverage",
-               p1.get("anti_bribery_coverage", "-"))
-
-    bribe_cases = p1.get("bribery_cases", 0)
-    pdf.kv_row("Bribery Cases in FY", bribe_cases, shaded=True)
-    if bribe_cases > 0:
-        pdf.kv_row("Action Taken",
-                   p1.get("bribery_action", "-"))
+    if p1.get("anti_bribery_link"):
+        pdf.kv_row("Policy Web Link", p1.get("anti_bribery_link", "-"))
+    summary = p1.get("anti_bribery_summary") or p1.get("generated_policy")
+    if summary and str(summary).strip():
+        pdf.paragraph(str(summary))
     pdf.ln(2)
 
     # Disciplinary / Complaints
-    pdf.sub_heading("4. Disciplinary Actions & Complaints")
-    pdf.kv_row("Complaints Received on Conflict of Interest",
-               p1.get("conflict_complaints", 0), shaded=True)
-    pdf.kv_row("Disciplinary Actions Taken on Directors/KMPs",
-               p1.get("disciplinary_actions", 0))
+    pdf.sub_heading("4. Disciplinary Actions & Conflict of Interest")
+    disc_cur = (p1.get("disc_directors_cur", 0) + p1.get("disc_kmp_cur", 0) +
+                p1.get("disc_emp_cur", 0) + p1.get("disc_wkr_cur", 0))
+    disc_prev = (p1.get("disc_directors_prev", 0) + p1.get("disc_kmp_prev", 0) +
+                 p1.get("disc_emp_prev", 0) + p1.get("disc_wkr_prev", 0))
+    coi_cur = p1.get("coi_dir_cur", 0) + p1.get("coi_kmp_cur", 0)
+    coi_prev = p1.get("coi_dir_prev", 0) + p1.get("coi_kmp_prev", 0)
+    pdf.kv_row("Disciplinary Actions for Bribery/Corruption (Current FY)",
+               disc_cur, shaded=True)
+    pdf.kv_row("Disciplinary Actions for Bribery/Corruption (Previous FY)",
+               disc_prev)
+    pdf.kv_row("Conflict of Interest Complaints (Current FY)",
+               coi_cur, shaded=True)
+    pdf.kv_row("Conflict of Interest Complaints (Previous FY)", coi_prev)
 
     # Score
     score = p1.get("score", 0)
@@ -705,36 +726,38 @@ def render_p2(pdf, data):
 
     # R&D + Capex
     pdf.sub_heading("1. R&D and Capex on Sustainability")
-    cols = ["Investment Type", "Current FY (%)", "Previous FY (%)", "Improvements"]
-    widths = [40, 35, 35, 72]
+    rd_pct_cur = pct(p2.get("rd_sustain", 0), p2.get("rd_total", 0))
+    rd_pct_prev = pct(p2.get("rd_sustain_prev", 0), p2.get("rd_total_prev", 0))
+    cap_pct_cur = pct(p2.get("capex_sustain", 0), p2.get("capex_total", 0))
+    cap_pct_prev = pct(p2.get("capex_sustain_prev", 0), p2.get("capex_total_prev", 0))
+    cols = ["Investment Type", "Current FY (%)", "Previous FY (%)"]
+    widths = [90, 46, 46]
     pdf.table_header(cols, widths)
     pdf.table_row(
-        ["R&D",
-         f"{p2.get('rd_pct_cur', 0)}%",
-         f"{p2.get('rd_pct_prev', 0)}%",
-         (p2.get("rd_improvements", "-") or "-")[:45]],
+        ["R&D on sustainability", f"{rd_pct_cur}%", f"{rd_pct_prev}%"],
         widths, shaded=True
     )
     pdf.table_row(
-        ["Capex",
-         f"{p2.get('capex_pct_cur', 0)}%",
-         f"{p2.get('capex_pct_prev', 0)}%",
-         (p2.get("capex_improvements", "-") or "-")[:45]],
+        ["Capex on sustainability", f"{cap_pct_cur}%", f"{cap_pct_prev}%"],
         widths
     )
+    improvements = p2.get("sustain_improvements", "")
+    if improvements and str(improvements).strip():
+        pdf.ln(1)
+        pdf.paragraph("Improvements: " + str(improvements))
     pdf.ln(2)
 
     # Sustainable Sourcing
     pdf.sub_heading("2. Sustainable Sourcing")
-    pdf.kv_row("Sourcing Procedures in Place?",
-               p2.get("sustainable_sourcing", "-"), shaded=True)
-    if p2.get("sustainable_sourcing") == "Yes":
-        pdf.kv_row("% of Inputs Sourced Sustainably",
-                   f"{p2.get('sustainable_pct', 0)}%")
-        if p2.get("sourcing_methods"):
-            pdf.kv_row("Sourcing Methods",
-                       ", ".join(p2.get("sourcing_methods", [])),
-                       shaded=True)
+    has_sourcing = str(p2.get("has_sourcing_procedure", "No"))
+    pdf.kv_row("Sourcing Procedures in Place?", has_sourcing, shaded=True)
+    if has_sourcing == "Yes":
+        pdf.kv_row("% of Inputs Sourced Sustainably (Current FY)",
+                   f"{p2.get('sourcing_pct_cur', 0)}%")
+        pdf.kv_row("% of Inputs Sourced Sustainably (Previous FY)",
+                   f"{p2.get('sourcing_pct_prev', 0)}%", shaded=True)
+    if p2.get("sourcing_desc"):
+        pdf.paragraph(str(p2.get("sourcing_desc")))
     pdf.ln(2)
 
     # End-of-Life
@@ -744,7 +767,7 @@ def render_p2(pdf, data):
     widths = [36, 25, 26, 26, 22, 47]
     pdf.table_header(cols, widths)
     waste_types = [
-        ("plastic", "Plastic"),
+        ("plastics", "Plastic"),
         ("ewaste", "E-waste"),
         ("hazardous", "Hazardous"),
         ("other", "Other"),
@@ -774,14 +797,24 @@ def render_p2(pdf, data):
                        p2.get("epr_steps", "-"), shaded=True)
 
     # Leadership: LCA
-    if p2.get("lca_done") == "Yes":
+    lca_entries = p2.get("lca_entries", [])
+    if p2.get("lca_done") == "Yes" or lca_entries:
         pdf.ln(2)
         pdf.sub_heading("Leadership: Life Cycle Assessment (LCA)")
         pdf.kv_row("LCA Conducted?", "Yes", shaded=True)
-        pdf.kv_row("Product/Service", p2.get("lca_product", "-"))
-        pdf.kv_row("% of Turnover", f"{p2.get('lca_turnover_pct', 0)}%",
-                   shaded=True)
-        pdf.kv_row("External Agency?", p2.get("lca_external", "-"))
+        if lca_entries:
+            cols = ["Product/Service", "NIC", "% Turnover",
+                    "External?", "Public?"]
+            widths = [58, 26, 30, 34, 34]
+            pdf.table_header(cols, widths)
+            for i, e in enumerate(lca_entries):
+                pdf.table_row([
+                    (str(e.get("Product", "-")) or "-")[:34],
+                    str(e.get("NIC Code", "-") or "-"),
+                    str(e.get("Turnover %", 0)),
+                    str(e.get("External Agency", "-") or "-"),
+                    str(e.get("Public Results", "-") or "-"),
+                ], widths, shaded=(i % 2 == 0))
 
     # Score
     score = p2.get("score", 0)
@@ -810,11 +843,11 @@ def render_p3(pdf, data):
     pdf.table_header(cols, widths)
 
     benefits = [
-        ("Health Insurance", "health_ins_emp", "health_ins_wkr"),
-        ("Accident Insurance", "accident_ins_emp", "accident_ins_wkr"),
-        ("Maternity Benefits", "maternity_emp", "maternity_wkr"),
-        ("Paternity Benefits", "paternity_emp", "paternity_wkr"),
-        ("Day-care Facilities", "daycare_emp", "daycare_wkr"),
+        ("Health Insurance", "health_ins_pe", "health_ins_pw"),
+        ("Accident Insurance", "accident_ins_pe", "accident_ins_pw"),
+        ("Maternity Benefits", "maternity_pe", "maternity_pw"),
+        ("Paternity Benefits", "paternity_pe", "paternity_pw"),
+        ("Day-care Facilities", "daycare_pe", "daycare_pw"),
     ]
     for i, (label, ek, wk) in enumerate(benefits):
         emp = p3.get(ek, 0) or 0
@@ -828,35 +861,51 @@ def render_p3(pdf, data):
 
     # Safety
     pdf.sub_heading("2. Occupational Health & Safety")
-    pdf.kv_row("Safety Management System in Place?",
-               p3.get("safety_system", "-"), shaded=True)
+    safety_trained = p3.get("safety_trained", 0)
     pdf.kv_row("Safety Training Conducted?",
-               p3.get("safety_training", "-"))
-    pdf.kv_row("Lost Time Injuries (LTI)",
-               p3.get("lti_count", 0), shaded=True)
-    pdf.kv_row("Fatalities in FY", p3.get("fatalities", 0))
-    pdf.kv_row("Workplace Accidents (Reportable)",
-               p3.get("accidents", 0), shaded=True)
+               "Yes" if safety_trained > 0 else "No", shaded=True)
+    if safety_trained:
+        pdf.kv_row("No. of People Trained on Safety", safety_trained)
+    lti = p3.get("lti_total", 0) or (p3.get("lti_ec", 0) + p3.get("lti_wc", 0))
+    fat = (p3.get("fatalities_total", 0) or
+           (p3.get("fatalities_ec", 0) + p3.get("fatalities_wc", 0)))
+    pdf.kv_row("Lost Time Injuries (LTI)", lti, shaded=True)
+    pdf.kv_row("Fatalities in FY", fat)
+    if p3.get("safety_measures"):
+        pdf.kv_row("Safety Measures Described?", "Yes", shaded=True)
+        pdf.paragraph(str(p3.get("safety_measures")))
     pdf.ln(2)
 
     # Grievance
     pdf.sub_heading("3. Grievance Redressal")
-    pdf.kv_row("Grievance Mechanism for Employees?",
-               p3.get("grievance_mechanism", "-"), shaded=True)
-    pdf.kv_row("Complaints Received in FY",
-               p3.get("grievance_received", 0))
-    pdf.kv_row("Complaints Resolved",
-               p3.get("grievance_resolved", 0), shaded=True)
+    grievance = str(p3.get("grievance", ""))
+    if grievance and grievance != "-":
+        griev_val = "Yes" if grievance.startswith("Yes") else "No"
+    else:
+        griev_val = "-"
+    pdf.kv_row("Grievance Mechanism for Workers?", griev_val, shaded=True)
+    if p3.get("grievance_desc"):
+        pdf.kv_row("Mechanism", p3.get("grievance_desc"))
+    pdf.kv_row("Working Conditions Complaints (FY)",
+               p3.get("comp_wc_cur", 0), shaded=True)
+    pdf.kv_row("Health & Safety Complaints (FY)",
+               p3.get("comp_hs_cur", 0))
 
     # Retirement Benefits
     pdf.ln(2)
     pdf.sub_heading("4. Retirement & Statutory Benefits")
-    pdf.kv_row("PF Coverage %",
-               f"{p3.get('pf_coverage_pct', 0)}%", shaded=True)
-    pdf.kv_row("ESI Coverage %",
-               f"{p3.get('esi_coverage_pct', 0)}%")
-    pdf.kv_row("Gratuity Provision",
-               p3.get("gratuity_provision", "-"), shaded=True)
+    cols = ["Benefit", "% Emp (Cur)", "% Wkr (Cur)", "Deposited?"]
+    widths = [50, 44, 44, 44]
+    pdf.table_header(cols, widths)
+    for i, (label, rk) in enumerate([
+        ("PF (Provident Fund)", "pf"), ("Gratuity", "gratuity"), ("ESI", "esi")
+    ]):
+        pdf.table_row([
+            label,
+            f"{p3.get(f'{rk}_emp_cur', 0)}%",
+            f"{p3.get(f'{rk}_wkr_cur', 0)}%",
+            str(p3.get(f"{rk}_dep", "-")),
+        ], widths, shaded=(i % 2 == 0))
 
     # Score
     score = p3.get("score", 0)
@@ -2038,25 +2087,26 @@ def render_recommendations(pdf, data):
 
     # P1
     p1 = data.get("p1", {}) or data.get("c_p1", {})
-    if p1 and p1.get("training_conducted") != "Yes":
+    if p1 and p1.get("total_training_sessions", 0) == 0:
         recs.append("Conduct basic ethics / anti-bribery training for your team. "
                     "Even a 1-hour session with attendance record counts.")
 
     # P2
     p2 = data.get("p2", {}) or data.get("c_p2", {})
-    if p2 and p2.get("sustainable_sourcing") != "Yes":
+    if p2 and str(p2.get("has_sourcing_procedure", "No")) != "Yes":
         recs.append("Document sustainable sourcing practices - even informal ones. "
                     "Large buyers increasingly check this.")
 
     # P3
     p3 = data.get("p3", {}) or data.get("c_p3", {})
-    if p3 and p3.get("safety_training") != "Yes":
+    if p3 and p3.get("safety_trained", 0) == 0:
         recs.append("Conduct workplace safety training. "
                     "Even fire-drill + first-aid briefing counts.")
 
     # P4+5
     p45 = data.get("p4_5", {}) or data.get("c_p45", {})
-    if p45 and p45.get("posh_committee") != "Yes":
+    total_staff = (data.get("total_perm_emp", 0) + data.get("total_perm_wkr", 0))
+    if p45 and total_staff >= 10:
         recs.append("Form a POSH committee (Prevention of Sexual Harassment). "
                     "Mandatory under Indian law for any workplace with 10+ employees.")
 

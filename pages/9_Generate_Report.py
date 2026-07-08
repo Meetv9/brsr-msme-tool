@@ -128,7 +128,10 @@ if st.button(
             merged["business_type_tier"] = get_business_type()
             merged["section_b"] = st.session_state.get("data_b", {})
             merged["p1"] = st.session_state.get("p1", {}) or st.session_state.get("c_p1", {})
-            merged["p2"] = st.session_state.get("p2", {}) or st.session_state.get("c_p2", {})
+            p2_data = dict(st.session_state.get("p2", {}) or
+                           st.session_state.get("c_p2", {}))
+            p2_data["lca_entries"] = st.session_state.get("lca_entries", [])
+            merged["p2"] = p2_data
             merged["p3"] = st.session_state.get("p3", {}) or st.session_state.get("c_p3", {})
             merged["p4_5"] = st.session_state.get("p45", {}) or st.session_state.get("c_p45", {})
             merged["p6"] = st.session_state.get("p6", {})
