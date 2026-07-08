@@ -28,6 +28,11 @@ TANKER_LITRES = 5000
 LITRES_TO_KL = 0.001
 LPG_CO2_PER_KG = 2.98
 LITRES_PER_PERSON_PER_DAY = 40  # Standard MSME water benchmark
+# PPP conversion factor (GDP), INR per international $ — for BRSR-Core
+# PPP-adjusted intensities. Source: World Bank PA.NUS.PPP, India, 2024 vintage.
+# Refresh annually from data.worldbank.org/indicator/PA.NUS.PPP?locations=IN
+PPP_FACTOR_INR = 20.45
+PPP_FACTOR_VINTAGE = "World Bank PA.NUS.PPP, India, 2024"
 
 # ─────────────────────────────────────────────────────────────────────────────
 # ESTIMATION ENGINE
@@ -128,6 +133,14 @@ def compute_p6_metrics(p6):
     em_int    = round(scope12 / turnover, 10)  if turnover > 0 else None
     water_int = round(_n("water_kl_yr") / turnover, 8) if turnover > 0 else None
 
+    # BRSR-Core PPP-adjusted intensities (per international $ of PPP turnover).
+    # turnover_ppp = turnover_rs / PPP_FACTOR_INR converts rupee revenue into
+    # PPP international dollars, so intensity = metric / turnover_ppp.
+    turnover_ppp = turnover / PPP_FACTOR_INR if turnover > 0 else 0
+    e_int_ppp     = round(total_gj / turnover_ppp, 8)  if turnover_ppp > 0 else None
+    em_int_ppp    = round(scope12 / turnover_ppp, 10)  if turnover_ppp > 0 else None
+    water_int_ppp = round(_n("water_kl_yr") / turnover_ppp, 8) if turnover_ppp > 0 else None
+
     return {
         "scope1_diesel_co2": round(s1_diesel, 4),
         "scope1_petrol_co2": round(s1_petrol, 4),
@@ -140,6 +153,10 @@ def compute_p6_metrics(p6):
         "energy_intensity": e_int,
         "emission_intensity": em_int,
         "water_intensity": water_int,
+        "energy_intensity_ppp": e_int_ppp,
+        "emission_intensity_ppp": em_int_ppp,
+        "water_intensity_ppp": water_int_ppp,
+        "ppp_factor": PPP_FACTOR_INR,
         "total_waste_mt": waste_mt,
     }
 

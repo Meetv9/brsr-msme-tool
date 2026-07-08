@@ -1284,6 +1284,7 @@ def render_p6(pdf, data):
     total_gj = p6.get("total_energy_gj", 0) or 0
     turnover_rs = p6.get("turnover_rs", 0) or 0
     e_intensity = p6.get("energy_intensity", 0) or 0
+    e_intensity_ppp = p6.get("energy_intensity_ppp", 0) or 0
 
     rows = [
         ("Total Electricity Consumption",
@@ -1298,6 +1299,8 @@ def render_p6(pdf, data):
          f"{total_gj:.3f}", "-", "GJ"),
         ("Energy Intensity (per Rs. turnover)",
          f"{e_intensity:.8f}" if e_intensity else "-", "-", "GJ/Rs."),
+        ("Energy Intensity (per PPP $ - BRSR Core)",
+         f"{e_intensity_ppp:.6f}" if e_intensity_ppp else "-", "-", "GJ/PPP$"),
     ]
     for i, row in enumerate(rows):
         pdf.table_row(list(row), widths, shaded=(i % 2 == 0))
@@ -1400,6 +1403,7 @@ def render_p6(pdf, data):
     scope2 = p6.get("scope2_co2", 0) or 0
     scope12 = p6.get("scope12_co2", round(scope1 + scope2, 4))
     em_int = p6.get("emission_intensity", 0) or 0
+    em_int_ppp = p6.get("emission_intensity_ppp", 0) or 0
 
     rows = [
         ("Total Scope 1 Emissions (Direct - from fuel)",
@@ -1410,9 +1414,16 @@ def render_p6(pdf, data):
          f"{scope12:.3f}", "tCO2e"),
         ("Scope 1+2 Intensity (per Rs. turnover)",
          f"{em_int:.10f}" if em_int else "-", "tCO2e/Rs."),
+        ("Scope 1+2 Intensity (per PPP $ - BRSR Core)",
+         f"{em_int_ppp:.8f}" if em_int_ppp else "-", "tCO2e/PPP$"),
     ]
     for i, row in enumerate(rows):
         pdf.table_row(list(row), widths, shaded=(i % 2 == 0))
+    if em_int_ppp:
+        pdf.info_label(
+            f"PPP-adjusted using {clean(p6.get('ppp_factor', '-'))} INR per "
+            "international $ (World Bank PA.NUS.PPP, India, 2024 vintage)."
+        )
     pdf.ln(2)
 
     pdf.sub_heading("7. GHG Reduction Projects (Essential Q7)")
