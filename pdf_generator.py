@@ -78,14 +78,22 @@ def clean(text):
 
 
 def get_msme_class(turnover_lakhs):
+    # Turnover-based MSME limits per S.O. 1364(E), effective 1-Apr-2025:
+    # Micro <= Rs 10 cr (1,000 lakhs), Small <= Rs 100 cr (10,000 lakhs),
+    # Medium <= Rs 500 cr (50,000 lakhs). Above that is not an MSME.
+    # Composite criterion: plant & machinery / equipment investment also
+    # applies and export turnover is excluded, so a turnover-only label is
+    # indicative. This is the single source of truth (also used on Section A).
     if turnover_lakhs == 0:
         return "-"
-    if turnover_lakhs <= 500:
+    if turnover_lakhs <= 1000:
         return "Micro Enterprise"
-    elif turnover_lakhs <= 5000:
+    elif turnover_lakhs <= 10000:
         return "Small Enterprise"
-    else:
+    elif turnover_lakhs <= 50000:
         return "Medium Enterprise"
+    else:
+        return "Large Enterprise (above MSME turnover limit)"
 
 
 def safe_get(d, *keys, default="-"):

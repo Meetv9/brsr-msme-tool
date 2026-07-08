@@ -1,6 +1,6 @@
 import streamlit as st
 import re
-from pdf_generator import generate_brsr_pdf
+from pdf_generator import generate_brsr_pdf, get_msme_class as _msme_class_plain
 
 
 def _trigger_pdf_download(data: dict, esg_score: int):
@@ -246,31 +246,21 @@ def calc_esg_score():
 
 # ─────────────────────────────────────────────────────────────────────────────
 
+# Emoji badge for on-screen display only; the band logic lives in the single
+# canonical get_msme_class() in pdf_generator (2025 S.O. 1364(E) thresholds).
+_MSME_EMOJI = {
+    "Micro Enterprise": "🔵",
+    "Small Enterprise": "🟡",
+    "Medium Enterprise": "🟠",
+    "Large Enterprise (above MSME turnover limit)": "🔴",
+}
+
+
 def get_msme_class(turnover_lakhs):
-
-    # Turnover-based MSME limits (Govt of India, 2020): Micro ≤ ₹5 Cr,
-    # Small ≤ ₹50 Cr, Medium ≤ ₹250 Cr. Above ₹250 Cr is not an MSME.
-    # (Full MSME status also depends on plant & machinery investment.)
-
-    if turnover_lakhs == 0:
-
+    label = _msme_class_plain(turnover_lakhs)
+    if label == "-":
         return "-"
-
-    if turnover_lakhs <= 500:
-
-        return "🔵 Micro Enterprise"
-
-    elif turnover_lakhs <= 5000:
-
-        return "🟡 Small Enterprise"
-
-    elif turnover_lakhs <= 25000:
-
-        return "🟠 Medium Enterprise"
-
-    else:
-
-        return "🔴 Large Enterprise (above MSME turnover limit)"
+    return f"{_MSME_EMOJI.get(label, '')} {label}".strip()
 
 
 
@@ -609,6 +599,13 @@ if st.session_state.step == 1:
 
             st.info(f"{msme_class}")
 
+            st.caption(
+                "Indicative — MSME status is a composite criterion: plant & "
+                "machinery / equipment investment also applies, and export "
+                "turnover is excluded from this figure. Thresholds per S.O. "
+                "1364(E), effective 1 April 2025."
+            )
+
 
 
             d["listed"] = st.radio(
@@ -641,7 +638,7 @@ if st.session_state.step == 1:
 
 
 
-        tip("MSME Classification (as per Govt of India): Micro = turnover up to ₹5 Crore | Small = up to ₹50 Crore | Medium = up to ₹250 Crore. Above ₹250 Crore is not an MSME. Note: official status also depends on your investment in plant & machinery — this estimate uses turnover only.")
+        tip("MSME Classification (per S.O. 1364(E), effective 1 April 2025): Micro = turnover up to ₹10 Crore | Small = up to ₹100 Crore | Medium = up to ₹500 Crore. Above ₹500 Crore is not an MSME. Note: official status is a composite criterion — it also depends on investment in plant & machinery, and export turnover is excluded — this estimate uses turnover only.")
 
 
 
