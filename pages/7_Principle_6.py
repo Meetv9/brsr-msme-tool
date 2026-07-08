@@ -15,7 +15,7 @@ st.set_page_config(
 # ─────────────────────────────────────────────────────────────────────────────
 # CONVERSION CONSTANTS
 # ─────────────────────────────────────────────────────────────────────────────
-ELECTRICITY_RATE_PER_UNIT = 8.0
+ELECTRICITY_RATE_PER_UNIT = 8.0  # Rs/kWh, indicative MSME tariff, vintage 2025-01 — editable; used only for cost estimates
 KWH_TO_MJ = 3.6
 KWH_TO_GJ = 0.0036
 DIESEL_KWH_PER_LITRE = 9.9
@@ -28,6 +28,11 @@ TANKER_LITRES = 5000
 LITRES_TO_KL = 0.001
 LPG_CO2_PER_KG = 2.98
 LITRES_PER_PERSON_PER_DAY = 40  # Standard MSME water benchmark
+# Indicative fuel prices (Rs/litre) — editable, vintage-tracked. Used ONLY for
+# cost estimates, never for emissions or energy. Refresh from current pump
+# rates before relying on the cost figures.
+DIESEL_PRICE_PER_LITRE = 90   # Rs/L, indicative India retail avg, vintage 2025-01
+PETROL_PRICE_PER_LITRE = 100  # Rs/L, indicative India retail avg, vintage 2025-01
 # PPP conversion factor (GDP), INR per international $ — for BRSR-Core
 # PPP-adjusted intensities. Source: World Bank PA.NUS.PPP, India, 2024 vintage.
 # Refresh annually from data.worldbank.org/indicator/PA.NUS.PPP?locations=IN
@@ -628,7 +633,8 @@ if st.session_state.p6_mode == "quick":
             p6["petrol_litres_yr"] = petrol_yearly
             scope1_petrol = round((petrol_yearly * PETROL_CO2_PER_LITRE) / 1000, 4)
 
-            fuel_cost = diesel_yearly * 90 + petrol_yearly * 100
+            fuel_cost = (diesel_yearly * DIESEL_PRICE_PER_LITRE
+                         + petrol_yearly * PETROL_PRICE_PER_LITRE)
 
             if diesel_yearly > 0 or petrol_yearly > 0:
                 calc(
