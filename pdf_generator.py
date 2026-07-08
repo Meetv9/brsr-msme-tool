@@ -1437,22 +1437,36 @@ def render_p6(pdf, data):
     pdf.table_header(cols, widths)
 
     waste_full = p6.get("waste_full", {})
-    waste_cats = [
-        ("Plastic Waste (A)", "plastic"),
-        ("E-waste (B)", "ewaste"),
-        ("Bio-medical Waste (C)", "biomedical"),
-        ("Construction & Demolition (D)", "cd_waste"),
-        ("Battery Waste (E)", "battery"),
-        ("Other Hazardous Waste (G)", "hazardous"),
-        ("Other Non-hazardous Waste (H)", "non_haz"),
-    ]
+    waste_data = p6.get("waste_data", {})
+    has_full = any(waste_full.values())
     total_waste_cur = 0
-    for i, (label, key) in enumerate(waste_cats):
-        cur = waste_full.get(f"{key}_cur", 0) or 0
-        prev = waste_full.get(f"{key}_prev", 0) or 0
-        total_waste_cur += cur
-        pdf.table_row([label, f"{cur:.3f}", f"{prev:.3f}"],
-                      widths, shaded=(i % 2 == 0))
+
+    if has_full or not waste_data:
+        # Full mode (or nothing entered): BRSR standard waste categories in MT
+        waste_cats = [
+            ("Plastic Waste (A)", "plastic"),
+            ("E-waste (B)", "ewaste"),
+            ("Bio-medical Waste (C)", "biomedical"),
+            ("Construction & Demolition (D)", "cd_waste"),
+            ("Battery Waste (E)", "battery"),
+            ("Other Hazardous Waste (G)", "hazardous"),
+            ("Other Non-hazardous Waste (H)", "non_haz"),
+        ]
+        for i, (label, key) in enumerate(waste_cats):
+            cur = waste_full.get(f"{key}_cur", 0) or 0
+            prev = waste_full.get(f"{key}_prev", 0) or 0
+            total_waste_cur += cur
+            pdf.table_row([label, f"{cur:.3f}", f"{prev:.3f}"],
+                          widths, shaded=(i % 2 == 0))
+    else:
+        # Quick mode: categories captured as kg/month -> convert to MT/year
+        # so quick-mode waste is no longer dropped from the report (B-11).
+        for i, (wtype, info) in enumerate(waste_data.items()):
+            kg_month = (info or {}).get("kg_month", 0) or 0
+            mt_year = kg_month * 12 / 1000.0
+            total_waste_cur += mt_year
+            pdf.table_row([clean(wtype), f"{mt_year:.3f}", "-"],
+                          widths, shaded=(i % 2 == 0))
 
     pdf.set_font("Helvetica", "B", 8)
     pdf.set_fill_color(230, 245, 230)
