@@ -2087,10 +2087,16 @@ def render_methodology(pdf, data):
 
     pdf.sub_heading("Reporting frameworks")
     pdf.kv_row("Disclosure format",
-               "SEBI BRSR (Master Circular SEBI/HO/CFD/CFD-PoD-1/P/CIR/2023/175)",
+               "SEBI BRSR - Master Circular for LODR compliance dated "
+               "11-Nov-2024 (BRSR annexure), as amended 28-Mar-2025",
                shaded=True)
-    pdf.kv_row("Principles", "NGRBC - 9 principles (MCA, 2019)")
-    pdf.kv_row("GHG accounting", "GHG Protocol Corporate Standard (Scope 1 & 2)",
+    pdf.kv_row("BRSR Core reporting",
+               "SEBI/HO/CFD/CFD-PoD-1/P/CIR/2024/177 dated 20-Dec-2024")
+    pdf.kv_row("Principles", "NGRBC - 9 principles (MCA, 2019)", shaded=True)
+    pdf.kv_row("GHG accounting", "GHG Protocol Corporate Standard (Scope 1 & 2)")
+    pdf.kv_row("Data vintages",
+               "Grid factor: CEA V21.0 (Nov 2025). PPP factor: World Bank "
+               "PA.NUS.PPP, India 2024. Refresh annually before filing.",
                shaded=True)
 
     pdf.sub_heading("Emission factors used")
