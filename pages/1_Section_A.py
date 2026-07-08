@@ -1738,6 +1738,23 @@ elif st.session_state.step == 5:
             "**Most MSMEs do NOT qualify. If you're below these numbers, select 'Not Applicable'.**"
         )
 
+        # Threshold-based hint from the turnover already entered in Step 1.
+        # 1,000 crore = 100,000 lakhs. Turnover is the only Sec-135 criterion
+        # we hold as a number here; net worth / net profit need audited books.
+        _turnover_lakhs = d.get("turnover_lakhs", 0) or 0
+        if _turnover_lakhs >= 100000:
+            st.warning(
+                "⚠️ Your entered turnover is ≥ ₹1,000 Crore. On the turnover "
+                "criterion alone, CSR under Section 135 likely applies — this "
+                "holds for Private Limited companies too, not just listed ones. "
+                "Confirm with your CA and select 'Yes' below if applicable."
+            )
+        st.caption(
+            "This hint uses turnover only. The net-worth (₹500 Cr) and "
+            "net-profit (₹5 Cr) criteria require your audited financials — "
+            "please check with your CA before finalising."
+        )
+
         CSR_OPTIONS = [
             "Not Applicable - we are below the threshold (most MSMEs)",
             "Yes - we meet the CSR threshold",

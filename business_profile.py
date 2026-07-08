@@ -65,9 +65,23 @@ def has_board():
 def has_shareholders():
     return get_business_type() in ["Private Limited", "Public Listed"]
 
-def requires_csr():
-    """CSR mandatory under Companies Act Sec 135 — large companies only."""
-    return is_listed()
+# Companies Act 2013, Section 135 CSR thresholds (any ONE triggers CSR).
+# These apply to ANY company (Private Limited included), not just listed ones.
+CSR_NETWORTH_CR = 500     # net worth >= Rs 500 crore
+CSR_TURNOVER_CR = 1000    # turnover >= Rs 1,000 crore
+CSR_NETPROFIT_CR = 5      # net profit >= Rs 5 crore in any financial year
+
+
+def requires_csr(turnover_cr=0, net_worth_cr=0, net_profit_cr=0):
+    """CSR under Companies Act Sec 135 applies to ANY company meeting any one
+    of the net-worth / turnover / net-profit thresholds — not listed-only.
+    Indicative: the statutory test uses audited financials, so confirm with a
+    CA. With no financials supplied, returns False (unknown -> don't assume)."""
+    return (
+        (turnover_cr or 0) >= CSR_TURNOVER_CR
+        or (net_worth_cr or 0) >= CSR_NETWORTH_CR
+        or (net_profit_cr or 0) >= CSR_NETPROFIT_CR
+    )
 
 def requires_formal_policies():
     """Formal written policies expected for Pvt Ltd + Listed."""
