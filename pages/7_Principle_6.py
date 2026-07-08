@@ -1679,6 +1679,16 @@ else:
 
             p6["water_kl_yr"] = total_withdrawal_cur
 
+            # Reconciliation: consumption cannot exceed what was withdrawn.
+            if (total_withdrawal_cur > 0
+                    and p6["water_consumed_cur"] > total_withdrawal_cur + 1e-6):
+                st.warning(
+                    f"⚠️ Water consumed ({p6['water_consumed_cur']:.1f} kL) "
+                    f"exceeds total withdrawn ({total_withdrawal_cur:.1f} kL). "
+                    "Consumption can't be more than what you withdrew — "
+                    "please check these figures."
+                )
+
             if total_withdrawal_cur > 0:
                 sm1, sm2, sm3 = st.columns(3)
                 sm1.metric("Total Withdrawal (Cur)", f"{total_withdrawal_cur:.1f} kL")
@@ -1878,11 +1888,20 @@ else:
             total_recovered = (p6["waste_recycled"] + p6["waste_reused"] +
                                p6["waste_other_recovery"])
             if total_waste_cur > 0:
-                recovery_pct = round((total_recovered / total_waste_cur) * 100, 1)
-                if recovery_pct >= 50:
-                    good(f"{recovery_pct}% waste recovered — excellent circular economy.")
-                elif recovery_pct > 0:
-                    warn(f"{recovery_pct}% waste recovered. Increase recycling/selling scrap.")
+                # Reconciliation: recovery cannot exceed waste generated.
+                if total_recovered > total_waste_cur + 1e-6:
+                    st.warning(
+                        f"⚠️ Waste recovered ({total_recovered:.3f} MT) exceeds "
+                        f"total waste generated ({total_waste_cur:.3f} MT). "
+                        "Recovery can't be more than what you generated — "
+                        "please check these figures."
+                    )
+                else:
+                    recovery_pct = round((total_recovered / total_waste_cur) * 100, 1)
+                    if recovery_pct >= 50:
+                        good(f"{recovery_pct}% waste recovered — excellent circular economy.")
+                    elif recovery_pct > 0:
+                        warn(f"{recovery_pct}% waste recovered. Increase recycling/selling scrap.")
 
         with st.container(border=True):
             st.markdown("#### Waste Disposal Methods")
@@ -1899,6 +1918,20 @@ else:
                 "Other disposal (MT)", min_value=0.0, step=0.001,
                 value=float(p6.get("waste_other_disp", 0.0)), key="f_wod"
             )
+
+            # Reconciliation: recovered + disposed cannot exceed generated.
+            total_disposed = (p6["waste_incinerated"] + p6["waste_landfilled"] +
+                              p6["waste_other_disp"])
+            if (total_waste_cur > 0
+                    and total_recovered + total_disposed > total_waste_cur + 1e-6):
+                st.warning(
+                    f"⚠️ Recovered ({total_recovered:.3f} MT) + disposed "
+                    f"({total_disposed:.3f} MT) = "
+                    f"{total_recovered + total_disposed:.3f} MT, which exceeds "
+                    f"total waste generated ({total_waste_cur:.3f} MT). "
+                    "These should add up to at most what you generated — "
+                    "please reconcile."
+                )
 
         with st.container(border=True):
             st.markdown("#### Waste Management Practices (Essential Q9)")

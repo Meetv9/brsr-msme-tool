@@ -1491,6 +1491,22 @@ else:
                 show_calc(
                     f"{tlabel} — H&S: {hs_pct}% | Skill: {sk_pct}%"
                 )
+                # Reconciliation: current-year trained can't exceed the total
+                # headcount (previous-year is left unchecked — prior workforce
+                # may differ from this year's total).
+                if total > 0:
+                    over = [
+                        lbl for lbl, val in [
+                            ("H&S trained (current)", p3[f"tr_{tk}_hs_cur"]),
+                            ("Skill trained (current)", p3[f"tr_{tk}_sk_cur"]),
+                        ] if val > total
+                    ]
+                    if over:
+                        st.warning(
+                            f"⚠️ For {tlabel}, {', '.join(over)} exceeds the "
+                            f"total ({total}). Trained count can't be more than "
+                            "the total headcount — please check."
+                        )
                 st.markdown("")
 
         with st.container(border=True):
@@ -1521,6 +1537,15 @@ else:
                 )
                 rev_pct = safe_pct(p3[f"rev_{rk}_done"], p3[f"rev_{rk}_total"])
                 rc[3].metric("Coverage", f"{rev_pct}%")
+                # Reconciliation: reviews done can't exceed the total to review.
+                rev_total = p3[f"rev_{rk}_total"]
+                rev_done = p3[f"rev_{rk}_done"]
+                if rev_total > 0 and rev_done > rev_total:
+                    st.warning(
+                        f"⚠️ For {rlabel}, reviews done ({rev_done}) exceeds "
+                        f"the total ({rev_total}). Reviews completed can't "
+                        "exceed the total to be reviewed — please check."
+                    )
 
         c_back, _, c_next = st.columns([1, 2, 1])
         with c_back:
