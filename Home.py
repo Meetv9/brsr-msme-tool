@@ -258,6 +258,58 @@ st.markdown("""
         .eco-save { flex-direction: column; align-items: flex-start; gap: 14px; padding: 20px; }
         .eco-save-cta { align-self: stretch; justify-content:center; }
     }
+
+    /* ── CBAM service banner (bigger; links to external CBAM app) ───────── */
+    .eco-cbam {
+        position: relative; overflow: hidden;
+        display: flex; align-items: center; gap: 26px;
+        border-radius: 22px; padding: 30px 34px; margin: 22px 0 6px;
+        text-decoration: none;
+        background:
+            radial-gradient(120% 150% at 0% 0%, rgba(56,189,248,0.22) 0%, rgba(56,189,248,0) 55%),
+            radial-gradient(130% 150% at 100% 100%, rgba(74,222,128,0.16) 0%, rgba(74,222,128,0) 55%),
+            linear-gradient(135deg, #0B2E44 0%, #0E3D26 55%, #10402A 100%);
+        border: 1px solid rgba(147,197,253,0.28);
+        box-shadow: 0 22px 52px -26px rgba(11,46,68,0.75);
+        transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+    }
+    .eco-cbam:hover { transform: translateY(-3px); border-color: rgba(147,197,253,0.6);
+                      box-shadow: 0 28px 62px -24px rgba(11,46,68,0.9); }
+    .eco-cbam::after {
+        content:""; position:absolute; inset:-50%;
+        background: conic-gradient(from 0deg at 50% 50%, transparent 0deg, rgba(191,219,254,0.10) 130deg, transparent 250deg);
+        animation: ecospin 24s linear infinite; pointer-events:none;
+    }
+    .eco-cbam > * { position: relative; z-index: 1; }
+    .eco-cbam-ic {
+        flex: 0 0 auto; width: 72px; height: 72px; border-radius: 18px;
+        display:flex; align-items:center; justify-content:center; font-size: 36px;
+        background: linear-gradient(180deg, rgba(191,219,254,0.22), rgba(110,231,160,0.16));
+        border: 1px solid rgba(220,252,231,0.3);
+    }
+    .eco-cbam-body { flex: 1 1 auto; min-width: 0; }
+    .eco-cbam-pill {
+        display:inline-block; font-size:10.5px; font-weight:700; letter-spacing:1.5px;
+        text-transform:uppercase; color:#07291A;
+        background: linear-gradient(90deg,#7DD3FC,#A7F3D0);
+        padding:3px 11px; border-radius:999px; margin-bottom:10px;
+    }
+    .eco-cbam-body h3 { font-family:'Sora',sans-serif; font-weight:800; font-size:22px;
+                        color:#FFFFFF; margin:0 0 7px; line-height:1.22; letter-spacing:-0.02em; }
+    .eco-cbam-body p { font-size:14px; color:#D5EAF5; line-height:1.55; margin:0 0 11px; }
+    .eco-cbam-feats { display:flex; flex-wrap:wrap; gap:7px 16px; margin:0; padding:0; list-style:none; }
+    .eco-cbam-feats li { font-size:12.5px; color:#BAE0F0; display:flex; align-items:center; gap:6px; }
+    .eco-cbam-cta {
+        flex: 0 0 auto; display:inline-flex; align-items:center; gap:8px;
+        font-weight:800; font-size:15px; color:#07291A;
+        background: linear-gradient(180deg, #7DD3FC, #38BDF8);
+        padding:14px 22px; border-radius:12px; white-space:nowrap;
+        box-shadow: 0 12px 26px -10px rgba(56,189,248,0.8);
+    }
+    @media (max-width: 640px) {
+        .eco-cbam { flex-direction: column; align-items: flex-start; gap: 16px; padding: 24px; }
+        .eco-cbam-cta { align-self: stretch; justify-content:center; }
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -371,6 +423,31 @@ st.markdown(
                back on the exact step you were on. 100% in your browser.</p>
         </div>
         <span class="eco-save-cta">See how →</span>
+    </a>
+    """,
+    unsafe_allow_html=True,
+)
+
+# ── CBAM service banner (clickable → external CBAM calculator, new tab) ───────
+st.markdown(
+    """
+    <a class="eco-cbam" href="https://ecosetucbam.streamlit.app"
+       target="_blank" rel="noopener">
+        <div class="eco-cbam-ic">🌍</div>
+        <div class="eco-cbam-body">
+            <span class="eco-cbam-pill">New service · EU Carbon Border</span>
+            <h3>Exporting to the EU? Calculate your CBAM emissions too.</h3>
+            <p>Ecosetu now offers a dedicated <b>CBAM calculator</b> for Indian
+               producers of steel, aluminium, cement, fertiliser, hydrogen &amp;
+               electricity — work out the embedded emissions your EU importers must
+               declare, using official EU default values and IPCC-based factors.</p>
+            <ul class="eco-cbam-feats">
+                <li>✓ Producer-side embedded-emissions calc</li>
+                <li>✓ Official EU default values</li>
+                <li>✓ Free &amp; 100% in your browser</li>
+            </ul>
+        </div>
+        <span class="eco-cbam-cta">Visit CBAM Calculator →</span>
     </a>
     """,
     unsafe_allow_html=True,

@@ -23,6 +23,14 @@ def render_save_resume_link():
                 label="Save / Resume progress",
                 icon="💾",
             )
+            # Cross-sell: dedicated CBAM calculator (separate external app)
+            st.markdown(
+                "<a href='https://ecosetucbam.streamlit.app' target='_blank' "
+                "rel='noopener' style='display:block; padding:3px 0 3px 2px; "
+                "font-size:13px; color:#0F4C2C; text-decoration:none; "
+                "font-weight:600;'>🌍 CBAM Calculator (EU exports)</a>",
+                unsafe_allow_html=True,
+            )
     except Exception:
         # st.page_link unavailable or page not found — default nav still covers it.
         pass
@@ -198,6 +206,12 @@ def render_sidebar_footer():
                 <a href='https://ecosetu.co.in'
                    style='color:#0F4C2C; text-decoration:none; font-weight:600;'>
                    ecosetu.co.in
+                </a><br><br>
+                <span style='color:#999;'>Also try</span><br>
+                <a href='https://ecosetucbam.streamlit.app' target='_blank'
+                   rel='noopener'
+                   style='color:#0F4C2C; text-decoration:none; font-weight:600;'>
+                   🌍 CBAM Calculator (EU exports)
                 </a>
             </div>
             <div style='font-size:10.5px; color:#999; text-align:center;
