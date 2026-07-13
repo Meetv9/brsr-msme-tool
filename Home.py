@@ -297,8 +297,13 @@ st.markdown("""
     .eco-cbam-body h3 { font-family:'Sora',sans-serif; font-weight:800; font-size:22px;
                         color:#FFFFFF; margin:0 0 7px; line-height:1.22; letter-spacing:-0.02em; }
     .eco-cbam-body p { font-size:14px; color:#D5EAF5; line-height:1.55; margin:0 0 11px; }
-    .eco-cbam-feats { display:flex; flex-wrap:wrap; gap:7px 16px; margin:0; padding:0; list-style:none; }
-    .eco-cbam-feats li { font-size:12.5px; color:#BAE0F0; display:flex; align-items:center; gap:6px; }
+    .eco-cbam-feats { display:flex; flex-wrap:wrap; gap:7px 16px; margin:0 0 12px; }
+    .eco-cbam-feats span { font-size:12.5px; color:#BAE0F0; }
+    .eco-cbam-note {
+        display:inline-block; font-size:12px; font-weight:700; color:#3A2A00;
+        background: linear-gradient(90deg,#FDE68A,#FCD34D);
+        padding:5px 13px; border-radius:999px; letter-spacing:0.2px;
+    }
     .eco-cbam-cta {
         flex: 0 0 auto; display:inline-flex; align-items:center; gap:8px;
         font-weight:800; font-size:15px; color:#07291A;
@@ -431,21 +436,18 @@ st.markdown(
 # ── CBAM service banner (clickable → external CBAM calculator, new tab) ───────
 st.markdown(
     """
-    <a class="eco-cbam" href="https://ecosetucbam.streamlit.app"
-       target="_blank" rel="noopener">
+    <a class="eco-cbam" href="https://ecosetucbam.streamlit.app" target="_blank" rel="noopener">
         <div class="eco-cbam-ic">🌍</div>
         <div class="eco-cbam-body">
             <span class="eco-cbam-pill">New service · EU Carbon Border</span>
             <h3>Exporting to the EU? Calculate your CBAM emissions too.</h3>
-            <p>Ecosetu now offers a dedicated <b>CBAM calculator</b> for Indian
-               producers of steel, aluminium, cement, fertiliser, hydrogen &amp;
-               electricity — work out the embedded emissions your EU importers must
-               declare, using official EU default values and IPCC-based factors.</p>
-            <ul class="eco-cbam-feats">
-                <li>✓ Producer-side embedded-emissions calc</li>
-                <li>✓ Official EU default values</li>
-                <li>✓ Free &amp; 100% in your browser</li>
-            </ul>
+            <p>Ecosetu now offers a dedicated <b>CBAM calculator</b> for Indian producers of steel, aluminium, cement, fertiliser, hydrogen &amp; electricity — work out the embedded emissions your EU importers must declare, using official EU default values and IPCC-based factors.</p>
+            <div class="eco-cbam-feats">
+                <span>✓ Producer-side embedded-emissions calc</span>
+                <span>✓ Official EU default values</span>
+                <span>✓ Free &amp; 100% in your browser</span>
+            </div>
+            <div class="eco-cbam-note">★ Included free with the Founding 100 membership</div>
         </div>
         <span class="eco-cbam-cta">Visit CBAM Calculator →</span>
     </a>

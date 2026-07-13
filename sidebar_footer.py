@@ -208,11 +208,7 @@ def render_sidebar_footer():
                    ecosetu.co.in
                 </a><br><br>
                 <span style='color:#999;'>Also try</span><br>
-                <a href='https://ecosetucbam.streamlit.app' target='_blank'
-                   rel='noopener'
-                   style='color:#0F4C2C; text-decoration:none; font-weight:600;'>
-                   🌍 CBAM Calculator (EU exports)
-                </a>
+                <a href='https://ecosetucbam.streamlit.app' target='_blank' rel='noopener' style='color:#0F4C2C; text-decoration:none; font-weight:600;'>🌍 CBAM Calculator (EU exports)</a>
             </div>
             <div style='font-size:10.5px; color:#999; text-align:center;
                         margin-top:14px; padding-top:8px;
